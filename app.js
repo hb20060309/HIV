@@ -37,8 +37,8 @@ const els = {
 
 const scenes = [
   { speaker: '旁白', text: '电影结束了。夜色把房间变得很安静。', next: '电影结束了。' },
-  { speaker: '林澈', text: '已经一点多了。', next: '周予安，你明天早上还有课吗？' },
-  { speaker: '周予安', text: '有啊。可是……你不是说今天想让我留下来吗？', next: '林澈没有否认，只是把手机扣在了桌上。', near: true },
+  { speaker: '林澈', text: '已经一点多了。', next: '小安，你明天早上还有课吗？' },
+  { speaker: '小安', text: '有啊。可是……你不是说今天想让我留下来吗？', next: '林澈没有否认，只是把手机扣在了桌上。', near: true },
   { speaker: '林澈', text: '我们都在一起这么久了，应该不用每次都弄得那么紧张吧？', choice: 'stability' },
 ];
 
@@ -73,7 +73,7 @@ function advance() {
 function showChoices(type) {
   const choices = {
     stability: [
-      ['A', '在一起久了，也还是应该做好防护。', () => { state.knowledge += 1; state.trust += 1; showKeyLine('周予安', '在一起久了，也还是应该把该确认的确认好。', '林澈听见了，没有马上反驳。'); }],
+      ['A', '在一起久了，也还是应该做好防护。', () => { state.knowledge += 1; state.trust += 1; showKeyLine('小安', '在一起久了，也还是应该把该确认的确认好。', '林澈听见了，没有马上反驳。'); }],
       ['B', '偶尔一次，应该没关系。', () => { state.anxiety += 1; state.branch = 'luck'; showKeyLine('林澈', '你看，我们都这么熟了。', '空气里有一小段没有被说完的沉默。'); }],
       ['C', '你是不是觉得我不信任你？', () => { state.trust -= 1; state.branch = 'tension'; showKeyLine('林澈', '我不是这个意思。', '他把手里的包装放回了桌面。'); }],
     ],
@@ -127,7 +127,7 @@ function showChoiceScene() {
   els.dialogueText.textContent = '就这一次，应该没事吧？';
   els.dialogueActions.innerHTML = '';
   els.choicePanel.hidden = false;
-  els.choiceKicker.textContent = '周予安没有马上回答';
+  els.choiceKicker.textContent = '小安没有马上回答';
   els.choiceList.innerHTML = '';
   const choices = [
     ['A', '先检查一下吧。', () => { state.knowledge += 1; state.trust += 1; showPreparationEntry(); }],
@@ -153,7 +153,7 @@ function showPreparationEntry() {
 
 function showLuckEntry() {
   els.speakerName.textContent = '旁白';
-  els.dialogueText.textContent = '第二天，周予安独自坐在床边，不断搜索昨晚留下的疑问。';
+  els.dialogueText.textContent = '第二天，小安独自坐在床边，不断搜索昨晚留下的疑问。';
   els.dialogueActions.innerHTML = '';
   els.conversationPanel.hidden = false;
   const backButton = document.createElement('button');
