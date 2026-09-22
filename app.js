@@ -165,7 +165,7 @@ function startCountdown() {
 const actionSteps = [
   { title: '先停止原地恐慌', copy: '把“焦虑”拖到行动区，提醒自己：高风险暴露不等于已经感染。', tag: 'CALM', done: '先稳住。接下来要做的是专业评估。' },
   { title: '尽快寻求专业评估', copy: '把“专业机构”拖到行动区，说明暴露时间、方式和是否有防护。', tag: 'HELP', done: '评估不是靠猜症状，而是由专业人员判断是否符合 PEP 条件。' },
-  { title: '按医嘱了解并启动 PEP', copy: '把“PEP”拖到行动区：是否使用、如何用药，都要遵循专业建议。', tag: 'PEP', done: 'PEP 越早开始越好，通常需要按医嘱完成疗程，并按建议复查。' },
+  { title: '按医嘱了解并启动 PEP', copy: '把“PEP”拖到行动区：是否使用、如何用药，都要遵循专业建议。', tag: 'PEP', done: 'PEP 越早开始越好，通常需要连续服用 28 天，具体按专业医嘱完成并复查。' },
 ];
 
 function showActionBoard() {
