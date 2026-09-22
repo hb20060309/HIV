@@ -13,7 +13,7 @@
         <div class="brand-lockup">
           <span class="brand-mark" aria-hidden="true">✦</span>
           <div>
-            <p class="eyebrow">互动绘本 · 第一章</p>
+            <p class="eyebrow">互动绘本 · 72 小时特别篇</p>
             <h1>我们先说清楚</h1>
           </div>
         </div>
@@ -28,7 +28,8 @@
 
       <section class="stage-wrap">
         <div class="stage" id="stage" aria-live="polite">
-          <div class="stage-note">周五 · 01:07</div>
+          <div class="stage-note" id="stageNote">周六 · 03:20</div>
+          <div class="countdown-badge" id="countdownBadge" hidden><span>距离 72 小时</span><strong id="countdownText">71:59:59</strong></div>
           <div class="window-glow"></div>
           <div class="window-frame"><span></span><span></span><span></span><span></span></div>
           <div class="wall-scribble scribble-one"></div>
@@ -55,7 +56,7 @@
             <div class="body body-lin"><span class="arm arm-left"></span><span class="arm arm-right"></span></div>
             <div class="leg leg-left"></div><div class="leg leg-right"></div>
           </div>
-          <div class="scene-sticker" id="sceneSticker">一个普通的夜晚</div>
+          <div class="scene-sticker" id="sceneSticker">先保护，再判断</div>
           <div class="interaction-layer" id="interactionLayer" hidden></div>
         </div>
       </section>
@@ -75,15 +76,15 @@
       <section class="interaction-panel" id="interactionPanel" hidden>
         <div class="interaction-header">
           <div>
-            <p class="choice-kicker">桌面互动</p>
-            <h2 id="interactionTitle">先确认这件小事</h2>
+            <p class="choice-kicker">行动互动</p>
+            <h2 id="interactionTitle">先把行动顺序排好</h2>
           </div>
           <span class="step-count" id="stepCount">1 / 4</span>
         </div>
-        <p class="interaction-copy" id="interactionCopy">把包装拖到检查区，先看看它是否完整。</p>
+        <p class="interaction-copy" id="interactionCopy">把第一步拖到行动区，不要让焦虑替你做决定。</p>
         <div class="interaction-board" id="interactionBoard">
-          <div class="drag-zone" id="dragZone"><span>检查区</span><small>拖到这里</small></div>
-          <div class="draggable-pack" id="draggablePack" tabindex="0" role="button" aria-label="可拖动的包装"><span>CARE</span><i></i></div>
+          <div class="drag-zone" id="dragZone"><span>行动区</span><small>拖到这里</small></div>
+          <div class="draggable-pack" id="draggablePack" tabindex="0" role="button" aria-label="可拖动的行动卡"><span>ACT</span><i></i></div>
           <div class="micro-note">每一步都可以慢一点。</div>
         </div>
         <div class="step-actions" id="stepActions"></div>

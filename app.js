@@ -1,11 +1,12 @@
 const state = {
   scene: 0,
-  visited: new Set(),
   trust: 0,
   knowledge: 0,
   anxiety: 0,
-  branch: null,
+  hoursRemaining: 72,
+  actionStarted: false,
   interactionStep: 0,
+  delayCount: 0,
 };
 
 const els = {
@@ -20,7 +21,6 @@ const els = {
   interactionPanel: document.getElementById('interactionPanel'),
   interactionTitle: document.getElementById('interactionTitle'),
   interactionCopy: document.getElementById('interactionCopy'),
-  interactionBoard: document.getElementById('interactionBoard'),
   dragZone: document.getElementById('dragZone'),
   draggablePack: document.getElementById('draggablePack'),
   stepCount: document.getElementById('stepCount'),
@@ -29,17 +29,20 @@ const els = {
   endingTitle: document.getElementById('endingTitle'),
   endingText: document.getElementById('endingText'),
   endingStats: document.getElementById('endingStats'),
-  stage: document.getElementById('stage'),
   sceneCounter: document.getElementById('sceneCounter'),
+  sceneSticker: document.getElementById('sceneSticker'),
+  stageNote: document.getElementById('stageNote'),
+  countdownBadge: document.getElementById('countdownBadge'),
+  countdownText: document.getElementById('countdownText'),
   xiao: document.getElementById('xiaoCharacter'),
   lin: document.getElementById('linCharacter'),
 };
 
 const scenes = [
-  { speaker: '旁白', text: '电影结束了。夜色把房间变得很安静。', next: '电影结束了。' },
-  { speaker: '林澈', text: '已经一点多了。', next: '小安，你明天早上还有课吗？' },
-  { speaker: '小安', text: '有啊。可是……你不是说今天想让我留下来吗？', next: '林澈没有否认，只是把手机扣在了桌上。', near: true },
-  { speaker: '林澈', text: '我们都在一起这么久了，应该不用每次都弄得那么紧张吧？', choice: 'stability' },
+  { speaker: '旁白', text: '夜里的一条消息，让原本熟悉的房间突然安静下来。', next: '林澈的手停在手机屏幕上。' },
+  { speaker: '林澈', text: '小安，先别急。我们把刚才的情况说清楚，好吗？', next: '他没有急着下结论，只把手机放到两人中间。' },
+  { speaker: '小安', text: '我只记得……可能发生了体液接触。我现在有点害怕。', next: '小安握紧了手，呼吸变得很快。', near: true },
+  { speaker: '林澈', text: '现在最重要的不是猜结果，是尽快问专业的人。', choice: 'firstAction' },
 ];
 
 function renderScene(scene) {
@@ -67,48 +70,64 @@ function renderScene(scene) {
 function advance() {
   state.scene += 1;
   if (state.scene < scenes.length) renderScene(scenes[state.scene]);
-  else showChoiceScene();
+  else showExposureChoice();
+}
+
+function createChoiceButton(key, label, fn) {
+  const button = document.createElement('button');
+  button.className = 'choice-button';
+  button.type = 'button';
+  button.innerHTML = `<span class="choice-key">${key}</span>${label}`;
+  button.addEventListener('click', () => { els.choicePanel.hidden = true; fn(); });
+  return button;
 }
 
 function showChoices(type) {
   const choices = {
-    stability: [
-      ['A', '在一起久了，也还是应该做好防护。', () => { state.knowledge += 1; state.trust += 1; showKeyLine('小安', '在一起久了，也还是应该把该确认的确认好。', '林澈听见了，没有马上反驳。'); }],
-      ['B', '偶尔一次，应该没关系。', () => { state.anxiety += 1; state.branch = 'luck'; showKeyLine('林澈', '你看，我们都这么熟了。', '空气里有一小段没有被说完的沉默。'); }],
-      ['C', '你是不是觉得我不信任你？', () => { state.trust -= 1; state.branch = 'tension'; showKeyLine('林澈', '我不是这个意思。', '他把手里的包装放回了桌面。'); }],
+    firstAction: [
+      ['A', '现在就联系专业机构，先做评估。', () => { state.knowledge += 1; state.trust += 1; startCountdown(); }],
+      ['B', '先搜一晚上症状，明天再说。', () => { state.anxiety += 2; state.delayCount += 1; spendTime(6); showDelayChoice(); }],
+      ['C', '我们是不是已经感染了？', () => { state.anxiety += 2; state.trust += 1; showPanicChoice(); }],
     ],
-    key: [
-      ['A', '先检查一下吧。', () => { state.knowledge += 1; state.trust += 1; showPreparationEntry(); }],
-      ['B', '你说得也有道理。', () => { state.anxiety += 1; state.branch = 'luck'; showLuckEntry(); }],
-      ['C', '我其实有点害怕，但不知道怕的是什么。', () => { state.anxiety += 1; state.trust += 1; state.branch = 'talk'; showTalkEntry(); }],
-    ],
-    talk: [
-      ['A', '我只是想对我们负责。', () => { state.trust += 1; showKeyLine('林澈', '那我们就慢一点。', '先把该确认的确认好。'); }],
-      ['B', '算了，别弄得这么麻烦。', () => { state.trust -= 1; showLuckEntry(); }],
-      ['C', '我以前总觉得这种话很难说出口。', () => { state.trust += 1; showPreparationEntry(); }],
-    ],
-    pause: [
-      ['A', '那我们今天先聊清楚。', () => { state.trust += 1; finishEnding('pause'); }],
-      ['B', '我想继续，但要按照刚才确认的方式来。', () => { state.knowledge += 1; state.trust += 1; finishEnding('clear'); }],
-      ['C', '我还是有点害怕，今晚先不做。', () => { state.anxiety -= 1; state.trust += 1; finishEnding('pause'); }],
+    delay: [
+      ['A', '不等了，现在就去问专业的人。', () => { state.knowledge += 1; startCountdown(); }],
+      ['B', '再多查几条，确认一下症状。', () => { state.anxiety += 1; state.delayCount += 1; spendTime(8); showDelayChoice(); }],
+      ['C', '先和林澈一起把暴露经过记下来。', () => { state.trust += 1; state.knowledge += 1; startCountdown(); }],
     ],
   };
-  const chosen = choices[type];
+  const selected = choices[type];
   els.choicePanel.hidden = false;
-  els.choiceKicker.textContent = type === 'stability' ? '你想怎么回应' : '轮到你说';
+  els.choiceKicker.textContent = type === 'firstAction' ? '你准备先做什么' : '时间还在走';
   els.choiceList.innerHTML = '';
-  chosen.forEach(([key, label, fn]) => {
-    const button = document.createElement('button');
-    button.className = 'choice-button';
-    button.type = 'button';
-    button.innerHTML = `<span class="choice-key">${key}</span>${label}`;
-    button.addEventListener('click', () => { els.choicePanel.hidden = true; fn(); });
-    els.choiceList.appendChild(button);
-  });
+  selected.forEach(([key, label, fn]) => els.choiceList.appendChild(createChoiceButton(key, label, fn)));
 }
 
-function showKeyLine(speaker, text, nextText) {
-  state.scene = Math.min(7, state.scene + 1);
+function showExposureChoice() {
+  state.scene = 4;
+  els.speakerName.textContent = '林澈';
+  els.dialogueText.textContent = '我们可能需要了解 PEP。先别把“可能暴露”当成“已经感染”。';
+  els.dialogueActions.innerHTML = '';
+  els.choicePanel.hidden = false;
+  els.choiceKicker.textContent = '小安要怎么回应';
+  els.choiceList.innerHTML = '';
+  els.choiceList.appendChild(createChoiceButton('A', '现在就联系专业机构，先做评估。', () => { state.knowledge += 1; state.trust += 1; startCountdown(); }));
+  els.choiceList.appendChild(createChoiceButton('B', '先搜一晚上症状，明天再说。', () => { state.anxiety += 2; state.delayCount += 1; spendTime(6); showDelayChoice(); }));
+  els.choiceList.appendChild(createChoiceButton('C', '我们是不是已经感染了？', () => { state.anxiety += 2; state.trust += 1; showPanicChoice(); }));
+}
+
+function showDelayChoice() {
+  showDialogue('旁白', `搜索结果越看越多，倒计时却从 72 小时变成了 ${formatHours()}。`, '把时间用在行动上', () => showChoices('delay'));
+}
+
+function showPanicChoice() {
+  showDialogue('林澈', '高风险暴露不等于已经感染。我们现在能做的，是尽快获得专业评估。', '我陪你去', () => { state.trust += 1; startCountdown(); });
+}
+
+function showDialogue(speaker, text, nextText, nextFn) {
+  els.conversationPanel.hidden = false;
+  els.choicePanel.hidden = true;
+  els.interactionPanel.hidden = true;
+  els.endingPanel.hidden = true;
   els.speakerName.textContent = speaker;
   els.dialogueText.textContent = text;
   els.dialogueActions.innerHTML = '';
@@ -116,125 +135,84 @@ function showKeyLine(speaker, text, nextText) {
   button.className = 'continue-button';
   button.type = 'button';
   button.innerHTML = `${nextText} <span>→</span>`;
-  button.addEventListener('click', () => showChoiceScene());
-  els.dialogueActions.appendChild(button);
-  els.conversationPanel.hidden = false;
-}
-
-function showChoiceScene() {
-  state.scene = 4;
-  els.speakerName.textContent = '林澈';
-  els.dialogueText.textContent = '就这一次，应该没事吧？';
-  els.dialogueActions.innerHTML = '';
-  els.choicePanel.hidden = false;
-  els.choiceKicker.textContent = '小安没有马上回答';
-  els.choiceList.innerHTML = '';
-  const choices = [
-    ['A', '先检查一下吧。', () => { state.knowledge += 1; state.trust += 1; showPreparationEntry(); }],
-    ['B', '偶尔一次，应该没关系。', () => { state.anxiety += 1; state.branch = 'luck'; showLuckEntry(); }],
-    ['C', '我其实有点害怕，但不知道怕的是什么。', () => { state.anxiety += 1; state.trust += 1; state.branch = 'talk'; showTalkEntry(); }],
-  ];
-  choices.forEach(([key, label, fn]) => {
-    const button = document.createElement('button');
-    button.className = 'choice-button';
-    button.type = 'button';
-    button.innerHTML = `<span class="choice-key">${key}</span>${label}`;
-    button.addEventListener('click', () => { els.choicePanel.hidden = true; fn(); });
-    els.choiceList.appendChild(button);
-  });
-}
-
-function showPreparationEntry() {
-  els.conversationPanel.hidden = true;
-  els.interactionPanel.hidden = false;
-  state.interactionStep = 0;
-  updateInteractionStep();
-}
-
-function showLuckEntry() {
-  els.speakerName.textContent = '旁白';
-  els.dialogueText.textContent = '第二天，小安独自坐在床边，不断搜索昨晚留下的疑问。';
-  els.dialogueActions.innerHTML = '';
-  els.conversationPanel.hidden = false;
-  const backButton = document.createElement('button');
-  backButton.className = 'continue-button'; backButton.type = 'button';
-  backButton.innerHTML = '回到刚才 <span>↶</span>';
-  backButton.addEventListener('click', showChoiceScene);
-  const endButton = document.createElement('button');
-  endButton.className = 'continue-button'; endButton.type = 'button';
-  endButton.style.marginLeft = '20px';
-  endButton.innerHTML = '先这样吧 <span>→</span>';
-  endButton.addEventListener('click', () => finishEnding('luck'));
-  els.dialogueActions.append(backButton, endButton);
-  state.branch = 'luck';
-}
-
-function showTalkEntry() {
-  els.speakerName.textContent = '林澈';
-  els.dialogueText.textContent = '害怕也可以说出来，不用装作自己什么都懂。';
-  els.dialogueActions.innerHTML = '';
-  els.conversationPanel.hidden = false;
-  const button = document.createElement('button');
-  button.className = 'continue-button'; button.type = 'button';
-  button.innerHTML = '继续说下去 <span>→</span>';
-  button.addEventListener('click', () => showChoices('talk'));
+  button.addEventListener('click', nextFn);
   els.dialogueActions.appendChild(button);
 }
 
-const interactionSteps = [
-  { title: '先看一眼安全套的包装', copy: '把包装拖到检查区，先确认它完整、没有破损。', done: '包装完整。下一步，看看有效期。' },
-  { title: '确认有效期', copy: '点击检查区的日期标签，确认它仍在有效期内。', done: '日期没有问题。打开时也要小心，别用尖锐物品。' },
-  { title: '分清正反面', copy: '拖动小圆点，把正面朝外的一侧放到高亮位置。', done: '方向正确。使用前捏住前端，排出空气。' },
-  { title: '一直用到最后', copy: '把包装拖到人物之间的标记处，确认全程使用。', done: '完成。结束后扶住根部退出，再妥善处理。' },
+function spendTime(hours) {
+  state.hoursRemaining = Math.max(1, state.hoursRemaining - hours);
+  updateCountdown();
+}
+
+function formatHours() {
+  return `${String(state.hoursRemaining).padStart(2, '0')}:00:00`;
+}
+
+function updateCountdown() {
+  els.countdownText.textContent = formatHours();
+  els.countdownBadge.classList.toggle('is-urgent', state.hoursRemaining <= 24);
+}
+
+function startCountdown() {
+  state.actionStarted = true;
+  els.countdownBadge.hidden = false;
+  els.stageNote.textContent = '暴露后 · 现在';
+  els.sceneSticker.textContent = '越早行动，越有帮助';
+  updateCountdown();
+  showDialogue('旁白', `暴露后计时开始：${formatHours()}。PEP 应尽早启动，最迟不超过 72 小时。`, '排好行动顺序', showActionBoard);
+}
+
+const actionSteps = [
+  { title: '先停止原地恐慌', copy: '把“焦虑”拖到行动区，提醒自己：高风险暴露不等于已经感染。', tag: 'CALM', done: '先稳住。接下来要做的是专业评估。' },
+  { title: '尽快寻求专业评估', copy: '把“专业机构”拖到行动区，说明暴露时间、方式和是否有防护。', tag: 'HELP', done: '评估不是靠猜症状，而是由专业人员判断是否符合 PEP 条件。' },
+  { title: '按医嘱了解并启动 PEP', copy: '把“PEP”拖到行动区：是否使用、如何用药，都要遵循专业建议。', tag: 'PEP', done: 'PEP 越早开始越好，通常需要按医嘱完成疗程，并按建议复查。' },
 ];
 
-function updateInteractionStep() {
-  const step = interactionSteps[state.interactionStep];
+function showActionBoard() {
+  els.conversationPanel.hidden = true;
+  els.choicePanel.hidden = true;
+  els.endingPanel.hidden = true;
+  els.interactionPanel.hidden = false;
+  state.interactionStep = 0;
+  updateActionStep();
+}
+
+function updateActionStep() {
+  const step = actionSteps[state.interactionStep];
   els.interactionTitle.textContent = step.title;
   els.interactionCopy.textContent = step.copy;
-  els.stepCount.textContent = `${state.interactionStep + 1} / ${interactionSteps.length}`;
+  els.stepCount.textContent = `${state.interactionStep + 1} / ${actionSteps.length}`;
   els.stepActions.innerHTML = '';
   els.dragZone.classList.remove('is-over');
+  els.dragZone.querySelector('span').textContent = '行动区';
   els.draggablePack.style.left = '70%';
   els.draggablePack.style.top = '45px';
   els.draggablePack.style.opacity = '1';
-  els.draggablePack.innerHTML = '<span>CARE</span><i></i>';
-  if (state.interactionStep === 1) {
-    els.draggablePack.innerHTML = '<span>DATE</span><i></i>';
-    els.dragZone.querySelector('span').textContent = '日期';
-  } else if (state.interactionStep === 2) {
-    els.draggablePack.innerHTML = '<span>↺</span><i></i>';
-    els.dragZone.querySelector('span').textContent = '正面';
-  } else if (state.interactionStep === 3) {
-    els.draggablePack.innerHTML = '<span>FULL</span><i></i>';
-    els.dragZone.querySelector('span').textContent = '全程';
-  } else {
-    els.dragZone.querySelector('span').textContent = '检查区';
-  }
+  els.draggablePack.innerHTML = `<span>${step.tag}</span><i></i>`;
 }
 
-function completeInteractionStep() {
-  const step = interactionSteps[state.interactionStep];
+function completeActionStep() {
+  const step = actionSteps[state.interactionStep];
   els.interactionCopy.textContent = step.done;
   els.draggablePack.style.opacity = '.2';
+  if (state.interactionStep === 0) state.anxiety = Math.max(0, state.anxiety - 1);
+  if (state.interactionStep === 1) state.knowledge += 1;
+  if (state.interactionStep === 2) state.knowledge += 1;
   const button = document.createElement('button');
-  button.className = 'continue-button'; button.type = 'button';
-  button.innerHTML = state.interactionStep === interactionSteps.length - 1 ? '继续 <span>→</span>' : '下一步 <span>→</span>';
+  button.className = 'continue-button';
+  button.type = 'button';
+  button.innerHTML = state.interactionStep === actionSteps.length - 1 ? '继续 <span>→</span>' : '下一步 <span>→</span>';
   button.addEventListener('click', () => {
-    if (state.interactionStep === interactionSteps.length - 1) showPauseChoice();
-    else { state.interactionStep += 1; updateInteractionStep(); }
+    if (state.interactionStep === actionSteps.length - 1) showFollowUp();
+    else { state.interactionStep += 1; updateActionStep(); }
   });
   els.stepActions.innerHTML = '';
   els.stepActions.appendChild(button);
 }
 
-function showPauseChoice() {
+function showFollowUp() {
   els.interactionPanel.hidden = true;
-  els.conversationPanel.hidden = false;
-  els.speakerName.textContent = '林澈';
-  els.dialogueText.textContent = '如果你现在不确定，我们可以先停。';
-  els.dialogueActions.innerHTML = '';
-  showChoices('pause');
+  showDialogue('林澈', '如果未来存在持续的暴露风险，也可以在专业机构了解 PrEP（暴露前预防）。它和 PEP 不是同一件事。', '我记住了', () => finishEnding(state.delayCount > 0 ? 'late' : 'timely'));
 }
 
 function finishEnding(kind) {
@@ -243,31 +221,37 @@ function finishEnding(kind) {
   els.interactionPanel.hidden = true;
   els.endingPanel.hidden = false;
   const endings = {
-    clear: {
-      title: '先说清楚，再靠近',
-      text: '你没有因为害怕而逃开，也没有用侥幸替自己做决定。你们开始学会在亲密之前，把边界和防护说清楚。',
-      tags: ['沟通 +1', '防护认知 +1'],
+    timely: {
+      title: '把 72 小时用在行动上',
+      text: '你们没有靠症状猜答案，也没有把“可能暴露”当成“已经感染”。你们及时寻求专业评估，了解了 PEP，也知道以后可以咨询 PrEP。',
+      tags: ['及时求助', '了解 PEP', '不把恐惧当结论'],
     },
-    pause: {
-      title: '暂停也没关系',
-      text: '今晚没有继续，不代表关系后退。你们愿意给彼此一点时间，也愿意把不确定说出来。',
-      tags: ['边界感 +1', '信任 +1'],
-    },
-    luck: {
-      title: '把问题留到明天',
-      text: '“应该没事”不是答案。真正需要确认的时候，越早说清楚，越少留下猜测。',
-      tags: ['侥幸倾向 ↑', '焦虑 ↑'],
+    late: {
+      title: '差一点把时间留给了焦虑',
+      text: '你们后来还是去寻求了专业帮助，但反复搜索和拖延让行动窗口变窄。下一次，先行动，再处理那些无法靠搜索确认的担心。',
+      tags: ['及时行动很重要', '高风险不等于感染', '继续寻求专业建议'],
     },
   };
-  const ending = endings[kind] || endings.clear;
+  const ending = endings[kind] || endings.timely;
   els.endingTitle.textContent = ending.title;
   els.endingText.textContent = ending.text;
   els.endingStats.innerHTML = ending.tags.map((tag) => `<span class="ending-stat">${tag}</span>`).join('');
 }
 
 function resetGame() {
-  state.scene = 0; state.visited.clear(); state.trust = 0; state.knowledge = 0; state.anxiety = 0; state.branch = null; state.interactionStep = 0;
-  els.xiao.classList.remove('is-near'); els.lin.classList.remove('is-near');
+  state.scene = 0;
+  state.trust = 0;
+  state.knowledge = 0;
+  state.anxiety = 0;
+  state.hoursRemaining = 72;
+  state.actionStarted = false;
+  state.interactionStep = 0;
+  state.delayCount = 0;
+  els.xiao.classList.remove('is-near');
+  els.lin.classList.remove('is-near');
+  els.countdownBadge.hidden = true;
+  els.stageNote.textContent = '周六 · 03:20';
+  els.sceneSticker.textContent = '先保护，再判断';
   renderScene(scenes[0]);
 }
 
@@ -275,16 +259,15 @@ document.querySelectorAll('.hotspot').forEach((hotspot) => {
   hotspot.addEventListener('click', () => {
     const kind = hotspot.dataset.hotspot;
     if (kind === 'phone') {
-      els.sceneSticker.textContent = '“今晚能不能多待一会儿？”';
+      els.sceneSticker.textContent = '消息：先把暴露经过说清楚';
       els.hotspotHint.hidden = false;
     } else if (kind === 'drink') {
-      els.sceneSticker.textContent = '他把饮料递给你';
+      els.sceneSticker.textContent = '先喝口水，再一起行动';
       els.hotspotHint.hidden = false;
     } else if (kind === 'pack') {
-      els.sceneSticker.textContent = '一件需要被认真对待的小事';
+      els.sceneSticker.textContent = '暴露前防护：安全套要正确、全程使用';
       els.hotspotHint.hidden = false;
     }
-    state.visited.add(kind);
   });
 });
 
@@ -296,25 +279,23 @@ els.draggablePack.addEventListener('pointerdown', (event) => {
 });
 els.draggablePack.addEventListener('pointermove', (event) => {
   if (!drag) return;
-  const nextLeft = drag.left + (event.clientX - drag.startX);
-  const nextTop = drag.top + (event.clientY - drag.startY);
-  els.draggablePack.style.left = `${nextLeft}px`;
-  els.draggablePack.style.top = `${nextTop}px`;
+  els.draggablePack.style.left = `${drag.left + event.clientX - drag.startX}px`;
+  els.draggablePack.style.top = `${drag.top + event.clientY - drag.startY}px`;
   const a = els.draggablePack.getBoundingClientRect();
   const b = els.dragZone.getBoundingClientRect();
-  const overlaps = a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
-  els.dragZone.classList.toggle('is-over', overlaps);
+  els.dragZone.classList.toggle('is-over', a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top);
 });
-els.draggablePack.addEventListener('pointerup', (event) => {
+els.draggablePack.addEventListener('pointerup', () => {
   if (!drag) return;
   const a = els.draggablePack.getBoundingClientRect();
   const b = els.dragZone.getBoundingClientRect();
   const overlaps = a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   drag = null;
-  if (overlaps) completeInteractionStep(); else { els.draggablePack.style.left = '70%'; els.draggablePack.style.top = '45px'; els.dragZone.classList.remove('is-over'); }
+  if (overlaps) completeActionStep();
+  else { els.draggablePack.style.left = '70%'; els.draggablePack.style.top = '45px'; els.dragZone.classList.remove('is-over'); }
 });
 els.draggablePack.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter' || event.key === ' ') completeInteractionStep();
+  if (event.key === 'Enter' || event.key === ' ') completeActionStep();
 });
 
 document.getElementById('restartButton').addEventListener('click', resetGame);
