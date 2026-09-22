@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f0e7" />
+    <title>我们先说清楚</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="game-shell" id="gameShell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <div>
+            <p class="eyebrow">互动绘本 · 第一章</p>
+            <h1>我们先说清楚</h1>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="chapter-progress" aria-label="章节进度">
+            <span class="progress-label">章节进度</span>
+            <span class="progress-dots"><i class="active"></i><i></i><i></i><i></i></span>
+          </div>
+          <button class="icon-button" id="restartButton" type="button" title="重新开始" aria-label="重新开始">↻</button>
+        </div>
+      </header>
+
+      <section class="stage-wrap">
+        <div class="stage" id="stage" aria-live="polite">
+          <div class="stage-note">周五 · 01:07</div>
+          <div class="window-glow"></div>
+          <div class="window-frame"><span></span><span></span><span></span><span></span></div>
+          <div class="wall-scribble scribble-one"></div>
+          <div class="wall-scribble scribble-two"></div>
+          <div class="shelf"><span class="book book-a"></span><span class="book book-b"></span><span class="plant"><b></b><i></i></span></div>
+          <div class="floor-line"></div>
+          <div class="rug"></div>
+          <div class="desk">
+            <div class="desk-top"></div>
+            <div class="desk-leg left"></div><div class="desk-leg right"></div>
+            <button class="hotspot phone-hotspot" data-hotspot="phone" aria-label="查看手机"><span class="phone-shape"><b></b></span></button>
+            <button class="hotspot drink-hotspot" data-hotspot="drink" aria-label="查看饮料"><span class="cup-shape"><i></i></span></button>
+            <button class="hotspot pack-hotspot" data-hotspot="pack" aria-label="查看包装"><span class="pack-shape"><b>CARE</b><i></i></span></button>
+          </div>
+          <div class="character character-xiao" id="xiaoCharacter">
+            <div class="hair hair-xiao"></div><div class="head"><span class="eye eye-left"></span><span class="eye eye-right"></span><span class="mouth"></span></div>
+            <div class="body body-xiao"><span class="arm arm-left"></span><span class="arm arm-right"></span></div>
+            <div class="leg leg-left"></div><div class="leg leg-right"></div>
+          </div>
+          <div class="character character-lin" id="linCharacter">
+            <div class="hair hair-lin"></div><div class="head"><span class="eye eye-left"></span><span class="eye eye-right"></span><span class="mouth"></span></div>
+            <div class="body body-lin"><span class="arm arm-left"></span><span class="arm arm-right"></span></div>
+            <div class="leg leg-left"></div><div class="leg leg-right"></div>
+          </div>
+          <div class="scene-sticker" id="sceneSticker">一个普通的夜晚</div>
+          <div class="interaction-layer" id="interactionLayer" hidden></div>
+        </div>
+      </section>
+
+      <section class="conversation-panel" id="conversationPanel">
+        <div class="speaker-line"><span class="speaker-dot"></span><span id="speakerName">林澈</span><span class="scene-counter" id="sceneCounter">01 / 08</span></div>
+        <p class="dialogue" id="dialogueText"></p>
+        <div class="dialogue-actions" id="dialogueActions"></div>
+        <div class="hotspot-hint" id="hotspotHint" hidden>点击场景里的物件，看看它们想说什么</div>
+      </section>
+
+      <section class="choice-panel" id="choicePanel" hidden>
+        <p class="choice-kicker" id="choiceKicker">轮到你说</p>
+        <div class="choice-list" id="choiceList"></div>
+      </section>
+
+      <section class="interaction-panel" id="interactionPanel" hidden>
+        <div class="interaction-header">
+          <div>
+            <p class="choice-kicker">桌面互动</p>
+            <h2 id="interactionTitle">先确认这件小事</h2>
+          </div>
+          <span class="step-count" id="stepCount">1 / 4</span>
+        </div>
+        <p class="interaction-copy" id="interactionCopy">把包装拖到检查区，先看看它是否完整。</p>
+        <div class="interaction-board" id="interactionBoard">
+          <div class="drag-zone" id="dragZone"><span>检查区</span><small>拖到这里</small></div>
+          <div class="draggable-pack" id="draggablePack" tabindex="0" role="button" aria-label="可拖动的包装"><span>CARE</span><i></i></div>
+          <div class="micro-note">每一步都可以慢一点。</div>
+        </div>
+        <div class="step-actions" id="stepActions"></div>
+      </section>
+
+      <section class="ending-panel" id="endingPanel" hidden>
+        <div class="ending-art"><span class="ending-sun"></span><span class="ending-line line-a"></span><span class="ending-line line-b"></span><span class="ending-heart">♡</span></div>
+        <p class="choice-kicker">第一章结束</p>
+        <h2 id="endingTitle">我们先说清楚</h2>
+        <p id="endingText"></p>
+        <div class="ending-stats" id="endingStats"></div>
+        <button class="primary-button" id="endingRestart" type="button">再走一次这段故事 <span>↗</span></button>
+      </section>
+
+      <footer class="footer-note">故事中的信息用于互动科普，不替代专业医疗建议。</footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
