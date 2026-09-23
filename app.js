@@ -127,10 +127,9 @@ function spendTime(hours) {
 
 function beginGame() {
   setChapter(0);
-  timeDivider('凌晨 02:13 · 新的匿名会话');
+  timeDivider('凌晨 02:13 · 今晚最后一条匿名消息');
   addMessage('Q', '你好。我可能发生了高风险暴露。现在已经过去两个小时。');
   addMessage('Q', '我不知道该找谁。请不要问我是谁。');
-  addMessage('林澈', '这是匿名账号今晚的最后一条消息。我们先回什么？', { self: true });
   clearChoices('选择小安的第一句回复');
   choice('事情发生多久了？防护有没有出现意外？', '先收集与专业评估有关的信息', () => {
     state.support += 12;
