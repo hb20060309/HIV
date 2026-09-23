@@ -176,6 +176,63 @@ button { color: inherit; font: inherit; }
 .feedback.positive { border-left-color: #4d8a70; background: #edf5f0; color: #355f4d; }
 .feedback.negative { border-left-color: var(--coral); background: #fff0e9; color: #874637; }
 
+.info-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px; }
+.info-slots > span { display: grid; place-items: center; min-height: 54px; padding: 7px; border: 1px dashed #b9c3bc; color: var(--muted); background: #f0f0ea; text-align: center; font-size: 10px; }
+.info-slots > span.filled { border-style: solid; border-color: #85aa99; color: var(--green); background: #edf5f0; }
+.info-slots b, .info-slots small { display: block; }
+.info-slots small { margin-top: 3px; color: var(--muted); font-size: 9px; line-height: 1.35; }
+.info-card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.info-card { min-height: 58px; padding: 9px 10px; border: 1px solid var(--line); background: #fff; text-align: left; cursor: pointer; }
+.info-card b, .info-card small { display: block; }
+.info-card b { font-size: 12px; }
+.info-card small { margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.4; }
+.info-card.selected { border-color: #85aa99; background: #edf5f0; }
+.info-card.unneeded { border-color: #d9ad9e; background: #fff4ef; }
+
+.rumor-list { display: grid; gap: 8px; }
+.rumor-card { position: relative; width: 100%; padding: 11px 13px; border: 1px solid var(--line); background: #fff; text-align: left; cursor: pointer; }
+.rumor-card span, .rumor-card b, .rumor-card small { display: block; }
+.rumor-card span { color: var(--coral); font-size: 9px; }
+.rumor-card b { margin-top: 4px; font-size: 13px; }
+.rumor-card small { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.rumor-card.dismissed { border-color: #9ab7aa; background: #edf5f0; }
+.rumor-card.dismissed b { color: #75807b; text-decoration: line-through; }
+
+.assessment-path { display: grid; gap: 7px; }
+.assessment-step { display: grid; grid-template-columns: 32px 1fr; align-items: start; gap: 10px; width: 100%; padding: 10px; border: 1px solid var(--line); background: #fff; text-align: left; cursor: pointer; }
+.assessment-step i { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #fff; background: var(--green); font-style: normal; font-size: 11px; }
+.assessment-step b, .assessment-step small { display: block; }
+.assessment-step b { font-size: 13px; }
+.assessment-step small { margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.assessment-step:disabled { cursor: default; opacity: .48; }
+.assessment-step.revealed { border-color: #9ab7aa; background: #edf5f0; opacity: 1; }
+
+.plan-stage { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 10px; }
+.plan-options { display: grid; align-content: start; gap: 8px; }
+.plan-tool { padding: 12px; border: 1px solid var(--line); background: #fff; text-align: left; cursor: pointer; }
+.plan-tool b, .plan-tool small { display: block; }
+.plan-tool b { font-size: 12px; }
+.plan-tool small { margin-top: 5px; color: var(--coral); font-size: 9px; }
+.plan-tool.added { border-color: #9ab7aa; color: #5d6a64; background: #edf5f0; }
+.plan-sheet { min-height: 134px; padding: 11px; border: 1px dashed #9eb4aa; background: #f3f2eb; }
+.plan-sheet > span { display: block; margin-bottom: 7px; color: var(--green); font-size: 10px; font-weight: 700; }
+.plan-sheet article { padding: 8px 0; border-top: 1px solid var(--line); }
+.plan-sheet article:first-child { border-top: 0; }
+.plan-sheet b { font-size: 11px; }
+.plan-sheet p { margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.plan-sheet small { color: var(--muted); font-size: 10px; }
+
+.guide-builder { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 10px; }
+.module-pool { display: grid; gap: 6px; }
+.guide-module { display: grid; grid-template-columns: 23px 1fr; align-items: center; gap: 7px; padding: 8px; border: 1px solid var(--line); background: #fff; text-align: left; cursor: pointer; }
+.guide-module i { display: grid; place-items: center; width: 21px; height: 21px; border-radius: 50%; color: #fff; background: var(--coral); font-style: normal; font-size: 9px; }
+.guide-module span { font-size: 10px; line-height: 1.4; }
+.guide-module.added { opacity: .42; }
+.guide-preview { min-height: 220px; padding: 14px; border: 2px solid var(--green); background: #fff9e9; }
+.guide-preview > span { display: block; padding-bottom: 8px; border-bottom: 1px solid #d5ccb1; color: var(--green); font-family: Georgia, "Songti SC", serif; font-size: 16px; font-weight: 700; }
+.guide-preview ol { margin: 9px 0 0; padding-left: 20px; }
+.guide-preview li { margin-bottom: 6px; color: #505a56; font-size: 9px; line-height: 1.45; }
+
 .scenario-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
 .scenario-card { padding: 13px; border: 1px solid var(--line); background: #fff; cursor: pointer; text-align: left; }
 .scenario-card:hover { border-color: var(--green); }
@@ -206,6 +263,11 @@ button { color: inherit; font: inherit; }
 .final-message span { color: var(--muted); font-size: 10px; }
 .final-message p { margin: 7px 0 0; line-height: 1.65; }
 .primary-button { font-size: 14px; }
+.takeaway-guide { max-width: 520px; margin: 18px auto; padding: 16px 18px; border: 1px solid #b9c8bf; background: #fff; text-align: left; }
+.takeaway-guide > span { color: var(--coral); font-size: 9px; font-weight: 700; }
+.takeaway-guide h3 { margin: 5px 0 10px; color: var(--green); font-family: Georgia, "Songti SC", serif; font-size: 18px; }
+.takeaway-guide ol { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px 24px; margin: 0; padding-left: 20px; }
+.takeaway-guide li { padding-left: 2px; color: #59625f; font-size: 10px; line-height: 1.5; }
 
 .app-footer { display: flex; justify-content: space-between; gap: 12px; padding: 10px 17px; border-top: 1px solid var(--line); background: #efeee8; color: #7d827f; font-size: 9px; }
 
@@ -240,6 +302,9 @@ button { color: inherit; font: inherit; }
   .interaction-dock, .tool-view { padding: 13px 12px 15px; }
   .scenario-grid { grid-template-columns: 1fr; }
   .guide-grid { grid-template-columns: 1fr; }
+  .info-slots { grid-template-columns: repeat(2, 1fr); }
+  .plan-stage, .guide-builder { grid-template-columns: 1fr; }
+  .takeaway-guide ol { grid-template-columns: 1fr; }
   .action-board { min-height: 176px; }
   .drop-zone { width: 48%; min-height: 102px; }
   .drag-card { right: 4%; width: 43%; top: 39px; }
