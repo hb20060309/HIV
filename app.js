@@ -15,8 +15,7 @@ const state = {
   delay: 0,
   judgment: 0,
   medicationMistakes: 0,
-  correctMatches: 0,
-  prepAnswers: {},
+  viewedGuides: new Set(),
 };
 
 const els = {
@@ -298,8 +297,10 @@ function beginChapterThree() {
   choice('在普通网店购买“快速阻断套餐”', '来源、适用性和用法都无法保证', () => {
     state.medicationMistakes += 1;
     state.support -= 10;
+    spendTime(2);
     addMessage('小安', '要不先在网上买一套药？', { self: true });
-    addMessage('林澈', '不行。是否需要PEP、使用什么方案都要由专业人员评估。', { self: true });
+    addMessage('Q', '我差点已经下单了。两个小时又过去了，可我还是没有得到专业评估。');
+    addMessage('互助提示', '<strong>后果：</strong>来路不明的药物信息延误了行动。是否需要PEP、使用什么方案都应由专业人员评估。', { type: 'system', note: true });
     continueButton('改为联系专业机构', showAssessmentResult);
   });
   choice('等待网友回复后再决定', '网友经验不能替代专业评估', () => {
@@ -333,9 +334,9 @@ const medicationScenarios = [
     day: '第1天',
     q: '我应该怎么避免忘记？',
     choices: [
-      ['设置固定提醒，并按医嘱服用', true],
-      ['想起来再吃就可以', false],
-      ['一次多吃一点，之后就不怕漏', false],
+      { label: '设置固定提醒，并按医嘱服用', correct: true },
+      { label: '想起来再吃就可以', consequence: 'Q没有建立固定提醒，第二天差点漏服，服药计划变得不稳定。' },
+      { label: '一次多吃一点，之后就不怕漏', consequence: 'Q准备自行加量。错误加量可能带来用药风险，需要停止并咨询专业人员。' },
     ],
     correct: '建立固定提醒有助于按医嘱完成疗程。',
   },
@@ -343,9 +344,9 @@ const medicationScenarios = [
     day: '第9天',
     q: '今天有些不舒服，我能自己换药吗？',
     choices: [
-      ['及时联系专业人员，不自行换药或停药', true],
-      ['先停几天看看', false],
-      ['换成网上推荐的方案', false],
+      { label: '及时联系专业人员，不自行换药或停药', correct: true },
+      { label: '先停几天看看', consequence: 'Q自行暂停了一次用药，疗程连续性受到影响，需要尽快向专业人员说明。' },
+      { label: '换成网上推荐的方案', consequence: 'Q差点用来源不明的方案替换医嘱，用药安全和疗程连续性受到影响。' },
     ],
     correct: '出现不适应及时咨询专业人员，不自行调整方案。',
   },
@@ -353,9 +354,9 @@ const medicationScenarios = [
     day: '第17天',
     q: '我好像漏服了。是不是下一次加倍？',
     choices: [
-      ['尽快咨询专业人员，按其建议处理', true],
-      ['自行加倍补回来', false],
-      ['既然漏了就直接停药', false],
+      { label: '尽快咨询专业人员，按其建议处理', correct: true },
+      { label: '自行加倍补回来', consequence: 'Q准备自行加倍。漏服不能靠擅自加量处理，需要尽快咨询专业人员。' },
+      { label: '既然漏了就直接停药', consequence: 'Q想放弃余下疗程，规范完成PEP的计划被中断。' },
     ],
     correct: '漏服后的处理应咨询专业人员，不自行加量。',
   },
@@ -363,9 +364,9 @@ const medicationScenarios = [
     day: '第28天',
     q: '药吃完了，也没有症状，是不是不用检测了？',
     choices: [
-      ['按专业建议完成检测和必要复查', true],
-      ['没有症状就不用检测', false],
-      ['自己买试纸一次就结束', false],
+      { label: '按专业建议完成检测和必要复查', correct: true },
+      { label: '没有症状就不用检测', consequence: 'Q把“没有症状”当成结果，感染状态仍无法确认，后续检测计划被中断。' },
+      { label: '自己买试纸一次就结束', consequence: 'Q把一次自行检测当成全部随访，可能遗漏专业建议的检测节点。' },
     ],
     correct: '不能依靠症状判断，应按专业建议完成检测和复查。',
   },
@@ -381,16 +382,24 @@ function showMedicationCalendar(index) {
     <p class="tool-copy">Q：${item.q}</p>
     <div class="scenario-grid" id="medChoices"></div>`;
   const container = document.getElementById('medChoices');
-  item.choices.forEach(([label, isCorrect]) => {
+  item.choices.forEach((option) => {
     const button = document.createElement('button');
     button.className = 'scenario-card';
     button.type = 'button';
-    button.innerHTML = `<b>${label}</b><small>选择这条回复</small>`;
+    button.innerHTML = `<b>${option.label}</b><small>选择这条回复</small>`;
     button.addEventListener('click', () => {
-      if (!isCorrect) state.medicationMistakes += 1;
+      if (!option.correct) {
+        state.medicationMistakes += 1;
+        state.support -= 7;
+      } else {
+        state.support += 3;
+      }
+      updateStatus();
       const feedback = document.createElement('div');
-      feedback.className = 'feedback';
-      feedback.textContent = isCorrect ? item.correct : `这不是稳妥的处理方式。${item.correct}`;
+      feedback.className = `feedback ${option.correct ? 'positive' : 'negative'}`;
+      feedback.innerHTML = option.correct
+        ? `<strong>行动结果：</strong>${item.correct}`
+        : `<strong>选择后果：</strong>${option.consequence}<br>${item.correct}`;
       els.toolView.appendChild(feedback);
       const next = document.createElement('div');
       next.className = 'tap-fallback';
@@ -412,57 +421,49 @@ function beginChapterFive() {
   setChapter(4);
   timeDivider('疗程之后 · 新的问题');
   addMessage('Q', '如果以后仍可能遇到类似风险，是不是每次都只能等到事后？');
-  addMessage('小安', '不是。除了正确、全程使用安全套，还可以向专业机构了解PrEP。', { self: true });
-  addMessage('林澈', '我们把几个概念分清楚，但不替任何人制定用药方案。', { self: true });
-  continueButton('开始辨析', showPreventionMatch);
+  addMessage('小安', '不一定。我们先按“暴露前、暴露后、确认状态”看看有哪些工具。', { self: true });
+  addMessage('互助提示', '这里不是测验。点击卡片逐一了解概念，再形成适合自己的专业咨询问题。', { type: 'system', note: true });
+  continueButton('一起了解四种工具', showPreventionGuide);
 }
 
-const preventionRows = [
-  { label: '可能暴露后，尽快接受紧急预防评估', correct: 'PEP' },
-  { label: '尚未感染且可能持续存在暴露风险时咨询', correct: 'PrEP' },
-  { label: '了解当前感染状态，不能由症状替代', correct: '检测' },
-  { label: '正确、全程使用的屏障防护', correct: '安全套' },
+const preventionGuides = [
+  { phase: '暴露前', title: '安全套', copy: '需要正确、全程使用，是降低HIV及其他性传播感染风险的重要方式。' },
+  { phase: '暴露前', title: 'PrEP', copy: '适用于尚未感染HIV、但可能持续存在暴露风险的人，应向专业机构咨询和评估。' },
+  { phase: '暴露后', title: 'PEP', copy: '用于潜在暴露后的紧急预防。越早评估越好，最迟不超过暴露后72小时。' },
+  { phase: '确认状态', title: 'HIV检测', copy: '用于了解感染状态，不能用是否出现症状代替，并应遵循专业建议安排检测和复查。' },
 ];
 
-function showPreventionMatch() {
+function showPreventionGuide() {
   els.interactionDock.hidden = true;
   els.toolView.hidden = false;
+  state.viewedGuides = new Set();
   els.toolView.innerHTML = `
-    <div class="tool-head"><div><p>暴露前与暴露后</p><h3>把概念放回正确位置</h3></div><span class="tool-count">0 / 4</span></div>
-    <p class="tool-copy">点击每一行最合适的答案。PEP与PrEP都应在专业指导下使用。</p>
-    <div class="match-list" id="matchList"></div>
-    <div class="tap-fallback"><button type="button" id="finishMatch" disabled>完成辨析 →</button></div>`;
-  const list = document.getElementById('matchList');
-  const answers = ['PEP', 'PrEP', '检测', '安全套'];
-  let answered = 0;
-  preventionRows.forEach((row, rowIndex) => {
-    const line = document.createElement('div');
-    line.className = 'match-row';
-    line.innerHTML = `<span>${row.label}</span>`;
-    answers.forEach((answer) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.textContent = answer;
-      button.addEventListener('click', () => {
-        if (state.prepAnswers[rowIndex]) return;
-        state.prepAnswers[rowIndex] = answer;
-        button.classList.add('selected');
-        answered += 1;
-        if (answer === row.correct) state.correctMatches += 1;
-        [...line.querySelectorAll('button')].forEach((item) => { item.disabled = true; });
-        document.querySelector('.tool-count').textContent = `${answered} / 4`;
-        if (answered === preventionRows.length) document.getElementById('finishMatch').disabled = false;
-      });
-      line.appendChild(button);
+    <div class="tool-head"><div><p>暴露前 暴露后 确认状态</p><h3>先了解，再决定问什么</h3></div><span class="tool-count">0 / 4</span></div>
+    <p class="tool-copy">依次点击卡片查看说明。这里没有答错，目的是把行动时间点讲清楚。</p>
+    <div class="guide-grid" id="guideGrid"></div>
+    <div class="tap-fallback"><button type="button" id="finishGuide" disabled>形成行动方案 →</button></div>`;
+  const grid = document.getElementById('guideGrid');
+  preventionGuides.forEach((guide, index) => {
+    const button = document.createElement('button');
+    button.className = 'guide-card';
+    button.type = 'button';
+    button.innerHTML = `<span>${guide.phase}</span><b>${guide.title}</b><small>点击了解</small>`;
+    button.addEventListener('click', () => {
+      if (state.viewedGuides.has(index)) return;
+      state.viewedGuides.add(index);
+      button.classList.add('revealed');
+      button.innerHTML = `<span>${guide.phase}</span><b>${guide.title}</b><p>${guide.copy}</p>`;
+      document.querySelector('.tool-count').textContent = `${state.viewedGuides.size} / 4`;
+      if (state.viewedGuides.size === preventionGuides.length) document.getElementById('finishGuide').disabled = false;
     });
-    list.appendChild(line);
+    grid.appendChild(button);
   });
-  document.getElementById('finishMatch').addEventListener('click', () => {
-    document.getElementById('finishMatch').disabled = true;
-    const copy = state.correctMatches === 4
-      ? '你分清了：PEP用于暴露后紧急预防，PrEP用于暴露前预防，检测用于了解感染状态，安全套需要正确、全程使用。'
-      : 'PEP用于暴露后紧急预防；PrEP用于暴露前预防；检测不能由症状替代；安全套需要正确、全程使用。';
-    els.toolView.innerHTML += `<div class="feedback">${copy}</div>`;
+  document.getElementById('finishGuide').addEventListener('click', () => {
+    document.getElementById('finishGuide').disabled = true;
+    const feedback = document.createElement('div');
+    feedback.className = 'feedback positive';
+    feedback.innerHTML = '<strong>形成方案：</strong>暴露前可了解安全套与PrEP；发生潜在暴露后尽快接受PEP专业评估；感染状态需要通过检测了解。';
+    els.toolView.appendChild(feedback);
     const next = document.createElement('div');
     next.className = 'tap-fallback';
     next.innerHTML = '<button type="button" id="toPrivacy">进入最后一章 →</button>';
@@ -579,8 +580,7 @@ function resetGame() {
   state.delay = 0;
   state.judgment = 0;
   state.medicationMistakes = 0;
-  state.correctMatches = 0;
-  state.prepAnswers = {};
+  state.viewedGuides = new Set();
   els.chatLog.hidden = false;
   els.timerPill.classList.remove('stopped');
   els.restartDialog.close();
