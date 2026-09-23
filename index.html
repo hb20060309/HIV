@@ -3,104 +3,106 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f0e7" />
-    <title>我们先说清楚</title>
+    <meta name="theme-color" content="#173f3b" />
+    <meta name="description" content="一款围绕 HIV 暴露后预防 PEP 的校园匿名求助互动叙事游戏。" />
+    <title>我们先说清楚 72小时未读</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="game-shell" id="gameShell">
-      <header class="topbar">
-        <div class="brand-lockup">
-          <span class="brand-mark" aria-hidden="true">✦</span>
+    <main class="app-shell">
+      <aside class="story-rail" aria-label="章节导航">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">72</span>
           <div>
-            <p class="eyebrow">互动绘本 · 72 小时特别篇</p>
-            <h1>我们先说清楚</h1>
+            <p>我们先说清楚</p>
+            <h1>72小时未读</h1>
           </div>
         </div>
-        <div class="top-actions">
-          <div class="chapter-progress" aria-label="章节进度">
-            <span class="progress-label">章节进度</span>
-            <span class="progress-dots"><i class="active"></i><i></i><i></i><i></i></span>
+
+        <ol class="chapter-list" id="chapterList">
+          <li class="active"><span>01</span><div><b>凌晨的消息</b><small>先问有效信息</small></div></li>
+          <li><span>02</span><div><b>倒计时开始</b><small>72小时行动窗口</small></div></li>
+          <li><span>03</span><div><b>找到入口</b><small>专业评估</small></div></li>
+          <li><span>04</span><div><b>第28天</b><small>规范完成PEP</small></div></li>
+          <li><span>05</span><div><b>下一次更早</b><small>认识PrEP</small></div></li>
+          <li><span>06</span><div><b>发出去之前</b><small>隐私与反歧视</small></div></li>
+        </ol>
+
+        <div class="status-panel">
+          <div class="status-row">
+            <span>行动窗口</span>
+            <strong id="railTimer">70:00:00</strong>
           </div>
-          <button class="icon-button" id="restartButton" type="button" title="重新开始" aria-label="重新开始">↻</button>
+          <div class="status-row">
+            <span>支持</span>
+            <div class="meter"><i id="supportMeter"></i></div>
+          </div>
+          <div class="status-row">
+            <span>隐私</span>
+            <div class="meter privacy"><i id="privacyMeter"></i></div>
+          </div>
         </div>
-      </header>
+      </aside>
 
-      <section class="stage-wrap">
-        <div class="stage" id="stage" aria-live="polite">
-          <div class="stage-note" id="stageNote">周六 · 03:20</div>
-          <div class="countdown-badge" id="countdownBadge" hidden><span>距离 72 小时</span><strong id="countdownText">71:59:59</strong></div>
-          <div class="window-glow"></div>
-          <div class="window-frame"><span></span><span></span><span></span><span></span></div>
-          <div class="wall-scribble scribble-one"></div>
-          <div class="wall-scribble scribble-two"></div>
-          <div class="shelf"><span class="book book-a"></span><span class="book book-b"></span><span class="plant"><b></b><i></i></span></div>
-          <div class="floor-line"></div>
-          <div class="rug"></div>
-          <div class="desk">
-            <div class="desk-top"></div>
-            <div class="desk-leg left"></div><div class="desk-leg right"></div>
-            <button class="hotspot phone-hotspot" data-hotspot="phone" aria-label="查看手机"><span class="phone-shape"><b></b></span></button>
-            <button class="hotspot drink-hotspot" data-hotspot="drink" aria-label="查看饮料"><span class="cup-shape"><i></i></span></button>
-            <button class="hotspot pack-hotspot" data-hotspot="pack" aria-label="查看包装"><span class="pack-shape"><b>CARE</b><i></i></span></button>
+      <section class="phone-stage">
+        <header class="app-header">
+          <div class="account-avatar" aria-hidden="true"><span></span><i></i></div>
+          <div class="account-copy">
+            <p>校园青年健康互助</p>
+            <span><i></i> 匿名会话已开启</span>
           </div>
-          <div class="character character-xiao" id="xiaoCharacter">
-            <div class="name-tag">小安</div>
-            <div class="hair hair-xiao"></div><div class="head"><span class="eye eye-left"></span><span class="eye eye-right"></span><span class="mouth"></span></div>
-            <div class="body body-xiao"><span class="arm arm-left"></span><span class="arm arm-right"></span></div>
-            <div class="leg leg-left"></div><div class="leg leg-right"></div>
+          <div class="header-actions">
+            <div class="timer-pill" id="timerPill"><span>剩余</span><strong id="timerText">70:00:00</strong></div>
+            <button class="icon-button" id="restartButton" type="button" aria-label="重新开始" title="重新开始">↻</button>
           </div>
-          <div class="character character-lin" id="linCharacter">
-            <div class="name-tag">林澈</div>
-            <div class="hair hair-lin"></div><div class="head"><span class="eye eye-left"></span><span class="eye eye-right"></span><span class="mouth"></span></div>
-            <div class="body body-lin"><span class="arm arm-left"></span><span class="arm arm-right"></span></div>
-            <div class="leg leg-left"></div><div class="leg leg-right"></div>
-          </div>
-          <div class="scene-sticker" id="sceneSticker">先保护，再判断</div>
-          <div class="interaction-layer" id="interactionLayer" hidden></div>
-        </div>
-      </section>
+        </header>
 
-      <section class="conversation-panel" id="conversationPanel">
-        <div class="speaker-line"><span class="speaker-dot"></span><span id="speakerName">林澈</span><span class="scene-counter" id="sceneCounter">01 / 08</span></div>
-        <p class="dialogue" id="dialogueText"></p>
-        <div class="dialogue-actions" id="dialogueActions"></div>
-        <div class="hotspot-hint" id="hotspotHint" hidden>点击场景里的物件，看看它们想说什么</div>
-      </section>
-
-      <section class="choice-panel" id="choicePanel" hidden>
-        <p class="choice-kicker" id="choiceKicker">轮到你说</p>
-        <div class="choice-list" id="choiceList"></div>
-      </section>
-
-      <section class="interaction-panel" id="interactionPanel" hidden>
-        <div class="interaction-header">
+        <div class="chapter-band">
           <div>
-            <p class="choice-kicker">行动互动</p>
-            <h2 id="interactionTitle">先把行动顺序排好</h2>
+            <span id="chapterNumber">第一章</span>
+            <h2 id="chapterTitle">凌晨的消息</h2>
           </div>
-          <span class="step-count" id="stepCount">1 / 4</span>
+          <div class="chapter-progress" aria-label="游戏进度"><i id="progressBar"></i></div>
         </div>
-        <p class="interaction-copy" id="interactionCopy">把第一步拖到行动区，不要让焦虑替你做决定。</p>
-        <div class="interaction-board" id="interactionBoard">
-          <div class="drag-zone" id="dragZone"><span>行动区</span><small>拖到这里</small></div>
-          <div class="draggable-pack" id="draggablePack" tabindex="0" role="button" aria-label="可拖动的行动卡"><span>ACT</span><i></i></div>
-          <div class="micro-note">每一步都可以慢一点。</div>
-        </div>
-        <div class="step-actions" id="stepActions"></div>
-      </section>
 
-      <section class="ending-panel" id="endingPanel" hidden>
-        <div class="ending-art"><span class="ending-sun"></span><span class="ending-line line-a"></span><span class="ending-line line-b"></span><span class="ending-heart">♡</span></div>
-        <p class="choice-kicker">第一章结束</p>
-        <h2 id="endingTitle">我们先说清楚</h2>
-        <p id="endingText"></p>
-        <div class="ending-stats" id="endingStats"></div>
-        <button class="primary-button" id="endingRestart" type="button">再走一次这段故事 <span>↗</span></button>
-      </section>
+        <section class="chat-log" id="chatLog" aria-live="polite"></section>
 
-      <footer class="footer-note">故事中的信息用于互动科普，不替代专业医疗建议。</footer>
+        <section class="interaction-dock" id="interactionDock">
+          <p class="dock-label" id="dockLabel">回复匿名求助</p>
+          <div class="choice-list" id="choiceList"></div>
+        </section>
+
+        <section class="tool-view" id="toolView" hidden></section>
+
+        <section class="ending-view" id="endingView" hidden>
+          <div class="ending-mark" aria-hidden="true"><span>72</span><i></i></div>
+          <p class="ending-label">故事完成</p>
+          <h2 id="endingTitle"></h2>
+          <p class="ending-copy" id="endingCopy"></p>
+          <div class="ending-tags" id="endingTags"></div>
+          <div class="final-message">
+            <span>Q · 匿名</span>
+            <p id="finalMessageText">“谢谢你们没有先问我是谁，而是先告诉我该怎么做。”</p>
+          </div>
+          <button class="primary-button" id="playAgainButton" type="button">重新开始 <span>↻</span></button>
+        </section>
+
+        <footer class="app-footer">
+          <span>互动科普不替代专业医疗建议</span>
+          <span>PEP应尽早评估 最迟不超过暴露后72小时</span>
+        </footer>
+      </section>
     </main>
+
+    <dialog class="restart-dialog" id="restartDialog">
+      <h2>重新开始故事？</h2>
+      <p>当前选择和章节进度将被清除。</p>
+      <div>
+        <button type="button" id="cancelRestart">继续故事</button>
+        <button type="button" id="confirmRestart">重新开始</button>
+      </div>
+    </dialog>
+
     <script src="app.js"></script>
   </body>
 </html>
