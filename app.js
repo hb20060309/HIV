@@ -194,7 +194,7 @@ function beginGame() {
   timeDivider('凌晨 02:13 · 今晚最后一条匿名消息');
   addMessage('Q', '你好。刚才安全套好像破了，我不知道这算不算暴露。');
   addMessage('Q', '我很害怕，也不知道该找谁。请不要问我是谁。');
-  clearChoices('选择小安的第一句回复');
+  clearChoices('选择你的第一句回复');
   choice('先别急，我们只整理评估需要的信息', '不追问身份，也不替专业人员下结论', () => {
     state.support += 12;
     addMessage('小安', '不用告诉我们你是谁。我们先把专业评估需要的信息整理出来。', { self: true });
