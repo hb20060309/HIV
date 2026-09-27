@@ -1,16 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
-  <title id="title">校园健康中心候诊区</title>
-  <desc id="desc">安静明亮的候诊区，有绿植、座椅、咨询窗口和隐私提示。</desc>
-  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#edf2eb"/><stop offset="1" stop-color="#d7e3db"/></linearGradient></defs>
-  <rect width="1440" height="900" fill="url(#bg)"/>
-  <rect x="90" y="85" width="1260" height="660" rx="12" fill="#fbfaf4" stroke="#aac0b6" stroke-width="8"/>
-  <rect x="170" y="170" width="430" height="330" fill="#d6e6e4" stroke="#6c918c" stroke-width="8"/>
-  <path d="M385 170v330M170 335h430" stroke="#6c918c" stroke-width="7"/>
-  <rect x="770" y="165" width="455" height="220" rx="8" fill="#1e4a43"/>
-  <circle cx="998" cy="275" r="58" fill="#f0ca6c"/>
-  <path d="M973 275h50M998 250v50" stroke="#1e4a43" stroke-width="14" stroke-linecap="round"/>
-  <g><path d="M230 610h245v70H230zM550 610h245v70H550zM870 610h245v70H870z" fill="#648b83"/><path d="M250 540h205q20 0 20 20v50H230v-50q0-20 20-20zM570 540h205q20 0 20 20v50H550v-50q0-20 20-20zM890 540h205q20 0 20 20v50H870v-50q0-20 20-20z" fill="#8eb0a7"/></g>
-  <g transform="translate(1210 490)"><path d="M0 170h90l-12-95H12z" fill="#c77b57"/><path d="M45 85C0 45 10 0 45 35 80-5 95 45 45 85z" fill="#3d795b"/><path d="M45 95c-55-20-68 25-20 42 25 9 20-8 20-42z" fill="#568c69"/><path d="M47 90c53-27 70 15 25 38-22 12-21-5-25-38z" fill="#568c69"/></g>
-  <rect x="0" y="745" width="1440" height="155" fill="#c9d6cf"/>
-  <path d="M0 810h1440" stroke="#a5bab0" stroke-width="4"/>
+  <title id="title">手绘风格的健康中心候诊区</title>
+  <desc id="desc">明亮安静的候诊区里有窗户、椅子、绿植和健康咨询标记。</desc>
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".68" numOctaves="2" seed="12" result="noise"/>
+      <feComponentTransfer in="noise" result="fade"><feFuncA type="table" tableValues="0 .04"/></feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="fade" mode="multiply"/>
+    </filter>
+  </defs>
+  <g filter="url(#paper)" stroke="#3c4245" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 2H1438V898H2Z" fill="#f8edcf"/>
+    <path d="M0 704C348 681 1068 685 1440 707V900H0Z" fill="#dceff0"/>
+    <path d="M98 95C318 77 574 83 764 105L751 486C531 501 314 495 102 478Z" fill="#fffaf0"/>
+    <path d="M129 125C325 112 535 117 729 132L719 456C517 467 327 463 132 451Z" fill="#bfe1e2"/>
+    <path d="M425 122V460M130 288C318 278 532 282 724 294" fill="none" stroke="#78aab1" stroke-width="9"/>
+    <path d="M151 410C220 348 281 356 338 402C400 448 470 363 529 402C599 449 656 388 719 357V458H132Z" fill="#a9c99a" stroke="none"/>
+    <path d="M855 122C1008 105 1174 111 1325 130L1315 367C1163 379 1008 374 857 360Z" fill="#fffaf0"/>
+    <path d="M915 178C994 163 1084 167 1161 181L1155 311C1072 322 997 319 918 308Z" fill="#f5cfc0"/>
+    <circle cx="1038" cy="244" r="49" fill="#f2c25d"/>
+    <path d="M1012 244H1064M1038 218V270" fill="none" stroke-width="12"/>
+    <path d="M1198 190C1240 183 1278 186 1307 195M1198 218C1235 211 1272 214 1304 221M1198 246C1237 239 1266 241 1296 248" fill="none" stroke="#7eb8c2" stroke-width="6"/>
+    <g>
+      <path d="M172 583C279 565 403 570 499 588L490 680C383 692 276 688 176 676Z" fill="#f5cfc0"/>
+      <path d="M194 518C281 503 389 506 475 524L495 584C388 569 283 568 174 584Z" fill="#ef8a73"/>
+      <path d="M206 679L196 753M463 679L472 752" fill="none" stroke-width="13"/>
+    </g>
+    <g>
+      <path d="M579 585C688 567 810 570 909 590L899 680C796 692 686 690 582 677Z" fill="#dceff0"/>
+      <path d="M602 520C690 505 800 509 885 526L907 586C798 571 692 570 579 586Z" fill="#7eb8c2"/>
+      <path d="M615 679L605 755M872 681L881 755" fill="none" stroke-width="13"/>
+    </g>
+    <g>
+      <path d="M993 583C1100 566 1218 571 1319 588L1310 680C1204 691 1096 688 998 676Z" fill="#e7efdf"/>
+      <path d="M1013 518C1102 502 1207 506 1294 523L1317 584C1206 569 1101 569 991 584Z" fill="#769476"/>
+      <path d="M1028 679L1018 754M1284 680L1294 753" fill="none" stroke-width="13"/>
+    </g>
+    <g transform="translate(1220 404)">
+      <path d="M10 252C49 239 101 241 137 254L125 356C86 367 47 364 18 352Z" fill="#ef8a73"/>
+      <path d="M70 255C61 210 65 160 68 115" fill="none" stroke="#6d8d69" stroke-width="8"/>
+      <path d="M67 183C23 153 20 112 53 109C82 108 84 143 67 183Z" fill="#769476"/>
+      <path d="M69 153C104 107 137 107 141 137C145 169 109 174 69 153Z" fill="#91ad83"/>
+      <path d="M66 226C23 210 16 177 43 166C70 156 82 188 66 226Z" fill="#91ad83"/>
+      <path d="M68 210C105 175 137 184 134 212C132 239 101 239 68 210Z" fill="#769476"/>
+    </g>
+    <circle cx="816" cy="612" r="19" fill="#f2c25d"/>
+    <path d="M806 612H826M816 602V622" fill="none" stroke-width="5"/>
+    <path d="M73 819C391 790 1040 798 1372 826" fill="none" stroke="#b5d4d6" stroke-width="5"/>
+  </g>
 </svg>

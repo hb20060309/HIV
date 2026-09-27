@@ -185,28 +185,26 @@ function shell(content, options = {}) {
   const progress = options.progress ?? Math.max(3, (active / 6) * 100);
   app.innerHTML = `
     <div class="game-layout">
-      <aside class="rail">
+      <header class="storybook-header">
         <div class="brand"><span class="brand-mark">先</span><div><p>校园健康互动叙事</p><h1>我们先说清楚</h1></div></div>
         <ol class="chapter-list">
           ${chapters.map((chapter, index) => `
-            <li class="${index === active ? 'active' : ''} ${index < active ? 'done' : ''}">
-              <span>${String(index).padStart(2, '0')}</span>
-              <div><b>${chapter[1]}</b><small>${chapterNotes[index]}</small></div>
+            <li class="${index === active ? 'active' : ''} ${index < active ? 'done' : ''}" title="${chapter[1]}">
+              <span>${index < active ? '✓' : String(index)}</span><b>${chapter[1]}</b>
             </li>`).join('')}
         </ol>
-        <section class="rail-status">
-          <div class="status-line"><span>行动时间</span><strong>${state.professionalHelp ? '已接受评估' : `${state.hours}小时`}</strong></div>
-          <div class="status-line"><span>信任</span><div class="meter"><i style="width:${state.trust}%"></i></div></div>
-          <div class="status-line privacy"><span>隐私</span><div class="meter"><i style="width:${state.privacy}%"></i></div></div>
-          <p class="rail-note">这些状态只记录故事后果，不用于评价你。</p>
-        </section>
-      </aside>
+        <div class="top-actions">
+          <button class="icon-button" data-facts type="button" title="随身事实卡" aria-label="随身事实卡">i</button>
+          <button class="icon-button" data-restart type="button" title="重新开始" aria-label="重新开始">↻</button>
+        </div>
+      </header>
       <section class="main-panel">
         <header class="topbar">
           <div class="chapter-heading"><span>${chapters[active][0]}</span><h2>${chapters[active][1]}</h2></div>
-          <div class="top-actions">
-            <button class="icon-button" data-facts type="button" title="随身事实卡" aria-label="随身事实卡">i</button>
-            <button class="icon-button" data-restart type="button" title="重新开始" aria-label="重新开始">↻</button>
+          <div class="story-status" aria-label="本局状态">
+            <span class="time-note">行动时间 <b>${state.professionalHelp ? '已评估' : `${state.hours}小时`}</b></span>
+            <span>信任 <b>${Math.round(state.trust / 20)}/5</b></span>
+            <span>隐私 <b>${Math.round(state.privacy / 20)}/5</b></span>
           </div>
         </header>
         <div class="progress"><i style="width:${clamp(progress)}%"></i></div>
