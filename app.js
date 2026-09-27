@@ -28,6 +28,74 @@ const profileFields = [
   { key: 'knowledge', title: '你接触过哪些防艾知识？', options: ['第一次了解', '看过一些科普', '参加过培训', '不确定'] },
 ];
 
+function getProfileLens() {
+  const profile = state.profile;
+  const identity = {
+    '女生': '你也担心一开口，就先被评价“为什么没有保护好自己”。',
+    '男生': '你发现承认害怕并不容易，像是必须先表现得若无其事。',
+    '非二元 / 其他': '你担心求助会先变成对称谓和身份的解释，而不是先得到帮助。',
+    '不设定': '你希望不说明身份，也能先得到清楚、尊重的行动建议。',
+  }[profile.identity] || '';
+  const orientation = {
+    '异性恋': '你提醒自己：异性恋关系并不会自动变成“零风险”。',
+    '同性恋': '你担心性取向被当成风险结论，而不是只评估这次具体接触。',
+    '双性恋 / 泛性恋': '你不希望别人用性取向猜测伴侣，更不希望它被当成风险答案。',
+    '不设定': '你不需要公开性取向，专业评估只需要与这次接触有关的信息。',
+  }[profile.orientation] || '';
+  const relationships = {
+    '单身': {
+      thought: '这次亲密接触没有清晰的关系承诺，你不确定该怎样重新开口。',
+      question: '“我们并不熟，我需要知道你到底有没有HIV。”',
+      feedback: '关系不熟让追问看起来更直接，但对方的身份仍不能替代对这次接触的评估。',
+      plan: '因为目前单身，你把“开始新的亲密关系前怎样沟通边界”写进了计划。',
+    },
+    '恋爱中': {
+      thought: '“我们彼此信任”这个念头，一度让你想跳过对具体情况的评估。',
+      question: '“我们在一起这么久，你能保证自己没有HIV吗？”',
+      feedback: '信任对关系很重要，但它不能替代对具体接触方式和防护情况的评估。',
+      plan: '因为正在恋爱，你把防护、检测和隐私边界变成一次双方都能参与的沟通。',
+    },
+    '关系未定义': {
+      thought: '你担心一谈防护和检测，这段尚未定义的关系就会突然变得尴尬。',
+      question: '“我们到底算什么先不谈，你能保证自己没有HIV吗？”',
+      feedback: '关系尚未定义也不意味着必须用追问换取安全感，具体风险仍应由专业人员评估。',
+      plan: '因为关系尚未定义，你在计划里给“如何开口谈防护”留出了更明确的位置。',
+    },
+    '不设定': {
+      thought: '无论这段关系叫什么名字，都不能用关系身份代替具体风险评估。',
+      question: '“你能保证自己没有HIV吗？”',
+      feedback: '对方的回答不能替代对这次具体接触方式和防护情况的评估。',
+      plan: '无论关系状态如何，你都可以事先沟通防护、检测和隐私边界。',
+    },
+  };
+  const relationship = relationships[profile.relationship] || relationships['不设定'];
+  const help = {
+    '先自己搜索': '你平时习惯先搜索，这次搜索框也最先出现在脑海里。',
+    '先问信任的人': '你本能地想找一个信任的人，但又担心自己的经历被追问。',
+    '直接找专业机构': '你平时更愿意直接求助，但真正拿起手机时仍会犹豫。',
+    '还不确定': '你没有固定的求助方式，几种做法同时浮现在脑海里。',
+  }[profile.helpStyle] || '';
+  const knowledge = {
+    '第一次了解': 'PEP、PrEP这些缩写对你还很陌生，提示会从行动顺序讲起。',
+    '看过一些科普': '你记得一些词，却不确定怎样放到这次具体情境里。',
+    '参加过培训': '你接触过系统知识，但轮到自己时，焦虑仍可能挤掉熟悉的判断。',
+    '不确定': '你不确定自己知道多少，所以决定把每一步重新核实清楚。',
+  }[profile.knowledge] || '';
+  const testing = {
+    '第一次了解': '你这才把两件事分开：PEP用于潜在暴露后的紧急预防，检测用于了解感染状态。',
+    '看过一些科普': '你记得“窗口期”这个词，但具体检测与复查节点仍应由专业人员结合情况说明。',
+    '参加过培训': '你知道检测方法和时间会影响结果解释，因此没有把一次检测当作全部随访。',
+    '不确定': '你先抓住最重要的一点：没有症状不能代替检测，具体时间听取专业建议。',
+  }[profile.knowledge] || '';
+  const pep = {
+    '第一次了解': '你第一次把PEP理解为“潜在暴露后的预防”，也第一次知道它通常需要连续服用28天。',
+    '看过一些科普': '你以前听过PEP和28天疗程，这次开始注意漏服、不适与后续复查该怎样处理。',
+    '参加过培训': '你知道规范用药很重要，也知道真实情境中仍应把漏服或不适交给专业人员判断。',
+    '不确定': '你不要求自己记住所有药物细节，只记住不擅自停药、换药或加量。',
+  }[profile.knowledge] || '';
+  return { identity, orientation, relationship, help, knowledge, testing, pep };
+}
+
 const transmissionCards = [
   {
     title: '没有采取有效防护的阴道性交或肛交',
@@ -258,6 +326,14 @@ function renderCover() {
 function renderProfile() {
   setView('profile', 0);
   const selectedCount = profileFields.filter((field) => state.profile[field.key]).length;
+  const lens = getProfileLens();
+  const previewLines = [
+    state.profile.identity && lens.identity,
+    state.profile.orientation && lens.orientation,
+    state.profile.relationship && lens.relationship.thought,
+    state.profile.helpStyle && lens.help,
+    state.profile.knowledge && lens.knowledge,
+  ].filter(Boolean);
   shell(`
     <section class="view profile-view">
       <div class="view-head">
@@ -273,6 +349,7 @@ function renderProfile() {
             </div>
           </fieldset>`).join('')}
       </div>
+      ${previewLines.length ? `<aside class="profile-preview"><span>这个视角会怎样进入故事</span><p>${previewLines.join(' ')}</p><small>这些差异改变心理活动、对话语境和提示深度，不改变医学事实。</small></aside>` : ''}
       <div class="profile-summary">
         <p>${selectedCount === profileFields.length ? '视角已准备好。医学事实不会因这些选择而改变。' : '完成五项选择后开始；身份项都可以选择“不设定”。'}</p>
         <button class="button" id="startChapter" type="button" ${selectedCount === profileFields.length ? '' : 'disabled'}>开始第一章 →</button>
@@ -295,6 +372,7 @@ const investigationItems = {
 
 function renderInvestigation() {
   setView('investigation', 1);
+  const lens = getProfileLens();
   shell(`
     <section class="scene-view">
       <div class="scene-canvas room">
@@ -302,6 +380,7 @@ function renderInvestigation() {
         ${Object.keys(investigationItems).map((id) => `<button class="hotspot ${state.found.includes(id) ? 'done' : ''}" type="button" data-item="${id}" aria-label="查看${investigationItems[id][0]}">${state.found.includes(id) ? '✓' : '+'}</button>`).join('')}
       </div>
       <div class="scene-dock">
+        <div class="perspective-note"><b>此刻的你</b><span>${lens.identity} ${lens.relationship.thought}</span></div>
         <div class="dock-top"><p>先把能确认的信息整理出来。点击场景中的四个位置。</p><span class="step-count">${state.found.length} / 4</span></div>
         <div class="found-list">${state.found.map((id) => `<span>${investigationItems[id][0]} · ${investigationItems[id][1]}</span>`).join('')}</div>
         ${state.found.length === 4 ? '<button class="button" id="finishInvestigation" type="button">信息整理好了 →</button>' : ''}
@@ -339,21 +418,17 @@ function renderNarrative(config) {
 
 function renderExposureDecision() {
   setView('exposureDecision', 1);
-  const helpHint = state.profile.helpStyle === '先自己搜索'
-    ? '你平时习惯先搜索，这次搜索框也最先出现在脑海里。'
-    : state.profile.helpStyle === '直接找专业机构'
-      ? '你平时更愿意直接求助，但真正拿起手机时仍会犹豫。'
-      : '你盯着手机，几种做法同时浮现在脑海里。';
+  const lens = getProfileLens();
   const options = [
     { text: '继续搜索“感染后最早有什么症状”', note: '也许身体会给出答案' },
-    { text: '追问对方“你确定自己没有HIV吗？”', note: '希望从对方身份得到保证' },
+    { text: `追问对方${lens.relationship.question}`, note: '希望从对方身份得到保证' },
     { text: '先等一晚，看身体会不会不舒服', note: '明早再决定是否求助' },
     { text: '带着记录，尽快联系正规专业机构', note: '让专业人员结合具体情况评估' },
   ];
   renderNarrative({
     art: 'room', location: '凌晨的宿舍', time: `距离那一晚约 ${70 - state.hours + 2} 小时`, progress: 20,
     copy: '信息已经整理好了。接下来怎么做，才不会让猜测继续消耗时间？',
-    detail: `${helpHint} 暴露不等于感染，伴侣的身份也不能代替具体风险评估。`,
+    detail: `${lens.help} ${lens.relationship.thought} ${lens.orientation}`,
     choices: options,
     onChoice: (index) => {
       if (index === 0) {
@@ -361,7 +436,7 @@ function renderExposureDecision() {
         renderExposureFeedback('搜索结果列出许多互相矛盾的“早期症状”。六小时过去了，但症状仍不能判断感染状态。', 'warning');
       } else if (index === 1) {
         adjust({ trust: -12, privacy: -5, judgment: 1 });
-        renderExposureFeedback('对方感到自己正在被审问。即使对方回答，也不能用身份或一句自述替代对这次具体情况的专业评估。', 'warning');
+        renderExposureFeedback(`对方感到自己正在被审问。${lens.relationship.feedback}`, 'warning');
       } else if (index === 2) {
         adjust({ hours: -12, delay: 12, action: -12 });
         renderExposureFeedback('一夜过去，没有症状并不能排除感染。等待身体变化只会消耗PEP的行动窗口。', 'warning');
@@ -430,21 +505,23 @@ function renderTransmission(feedback = '') {
 
 function renderTransmissionComplete() {
   setView('transmissionComplete', 2);
+  const lens = getProfileLens();
   renderNarrative({
     art: 'campus', location: '第二天 · 校园', time: '第二章完成', progress: 47,
     copy: '恐慌常常来自把“接触”两个字想得太宽。',
     detail: 'HIV有明确的传播条件。共同进餐、拥抱、握手和蚊虫叮咬不会传播；涉及血液或性接触的具体情境，则应基于事实进行评估。',
-    feedback: '关系身份、外表和道德评价都不是传播途径。把这些与HIV绑定，只会制造污名。', feedbackType: 'good',
+    feedback: `关系身份、外表和道德评价都不是传播途径。${lens.orientation}`, feedbackType: 'good',
     continueLabel: '进入第三章', onContinue: renderTestingQuestion,
   });
 }
 
 function renderTestingQuestion() {
   setView('testingQuestion', 3);
+  const lens = getProfileLens();
   renderNarrative({
     art: 'campus', location: '校园路上', time: '几天后', progress: 50,
     copy: '焦虑没有立刻消失。你开始想：“我现在没有任何不舒服，还需要检测吗？”',
-    detail: '专业人员已经说明了检测与复查安排，但搜索结果又让你动摇。',
+    detail: `${lens.knowledge} ${lens.testing}`,
     choices: [
       { text: '没有症状就先不检测', note: '把身体感觉当作结果' },
       { text: '只做一次自测，以后都不用管', note: '希望一次操作结束全部不确定' },
@@ -623,10 +700,12 @@ function startPlan() {
 
 function renderPlan() {
   setView('plan', 5);
+  const lens = getProfileLens();
   const phaseNames = { before: '暴露前', after: '潜在暴露后', confirm: '确认感染状态' };
   shell(`
     <section class="tool-view">
       <div class="view-head"><div><p class="eyebrow">个人预防计划</p><h3>下一次，可以更早行动</h3><p>先点击一张行动卡，再点击它所属的阶段。预防不是单一措施，而是一组可以提前准备的行动。</p></div><span class="step-count">${state.planAdded.length} / ${planItems.length}</span></div>
+      <div class="perspective-note plan-perspective"><b>与你有关</b><span>${lens.relationship.plan}</span></div>
       <div class="plan-board">
         ${Object.entries(phaseNames).map(([phase, label]) => `
           <button class="plan-column" type="button" data-phase="${phase}">
@@ -661,10 +740,11 @@ function renderPlan() {
 
 function renderPepFollowup() {
   setView('pepFollowup', 5);
+  const lens = getProfileLens();
   renderNarrative({
     art: 'room', location: '计划里的情境练习', time: '假设已由专业人员评估并启动PEP', progress: 91,
     copy: '如果服药期间漏服一次或出现不适，应该怎么做？',
-    detail: '这是情境练习，不代表本故事中的任何角色已经感染，也不提供个体用药方案。',
+    detail: `${lens.pep} 这是情境练习，不代表任何角色已经感染，也不提供个体用药方案。`,
     choices: [
       { text: '自行停药，等身体恢复后再说', note: '中断专业方案' },
       { text: '下一次擅自加倍剂量', note: '自行改变用药' },
@@ -728,6 +808,7 @@ function renderSocial(feedback = '') {
 
 function finishGame() {
   setView('ending', 6);
+  const lens = getProfileLens();
   let ending;
   if (state.judgment >= 4 || state.trust < 35) {
     ending = {
@@ -769,6 +850,12 @@ function finishGame() {
           <h3>${ending.title}</h3>
           <p class="ending-copy">${ending.copy}</p>
           <div class="ending-tags">${ending.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
+          <aside class="perspective-recap">
+            <span>本局视角</span>
+            <b>${[state.profile.identity, state.profile.orientation, state.profile.relationship, state.profile.helpStyle, state.profile.knowledge].filter(Boolean).join(' · ')}</b>
+            <p>${lens.identity} ${lens.relationship.thought}</p>
+            <small>它们改变了你经历焦虑、沟通和求助的方式，但从未改变医学事实。</small>
+          </aside>
           <button class="button" id="replayButton" type="button">用不同选择再玩一次 ↻</button>
         </div>
         <div class="review">
