@@ -455,7 +455,7 @@ button { -webkit-tap-highlight-color: transparent; }
   .story-status > span { padding: 4px 5px; font-size: 8px; }
   .cover { min-height: 610px; padding: 30px 23px; background-position: 58% center; }
   .cover h2 { font-size: 43px; }
-  .cover-lead { font-size: 12px; }
+  .cover-lead { width: min(355px, 100%); font-size: 12px; }
   .view, .tool-view { padding: 22px 16px; }
   .narrative { grid-template-columns: 1fr; }
   .narrative-art { min-height: 250px; border-right: 0; border-bottom: 2px solid var(--ink); }
