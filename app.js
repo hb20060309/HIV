@@ -395,7 +395,7 @@ function renderInvestigation() {
       renderInvestigation();
     }
   }));
-  document.getElementById('finishInvestigation')?.addEventListener('click', renderExposureDecision);
+  document.getElementById('finishInvestigation')?.addEventListener('click', renderHelpStyleBranch);
 }
 
 function renderNarrative(config) {
@@ -416,28 +416,138 @@ function renderNarrative(config) {
   document.getElementById('continueStory')?.addEventListener('click', config.onContinue);
 }
 
+function renderHelpStyleBranch() {
+  setView('helpStyleBranch', 1);
+  const branches = {
+    '先自己搜索': {
+      art: 'room', location: '搜索框',
+      copy: '你没有打开聊天列表，而是先点进了搜索框。',
+      detail: '搜索能带来一点掌控感，也可能让人困在无穷无尽的症状和个案里。',
+      choices: [
+        { text: '输入“感染HIV后多久会发烧”', note: '继续寻找身体会给出的答案', changes: { hours: -4, delay: 4, action: -5 }, result: '四小时过去，页面越开越多。症状仍不能判断感染状态，你却更难停下来。', type: 'warning' },
+        { text: '搜索本地正规PEP评估机构', note: '把搜索变成寻找行动入口', changes: { action: 9 }, result: '这次搜索没有试图诊断自己，而是帮你找到了可以继续行动的正规入口。', type: 'good' },
+        { text: '先关掉搜索，回看刚整理的信息', note: '把注意力拉回可确认的事实', changes: { action: 5 }, result: '你停下了症状联想，重新看见发生时间、接触方式和防护情况。', type: 'good' },
+      ],
+    },
+    '先问信任的人': {
+      art: 'room', location: '聊天列表',
+      copy: '你点开最信任的朋友头像，光标在输入框里闪了很久。',
+      detail: '向朋友求助可以得到陪伴，但你仍有权决定分享多少。',
+      choices: [
+        { text: '把完整经过和对方聊天截图都发过去', note: '希望朋友替你判断', changes: { privacy: -10, trust: 3 }, result: '朋友很关心你，但完整截图也让本不需要知道的人看见了他人的经历。', type: 'warning' },
+        { text: '只说“我有点慌，能帮我找正规机构吗？”', note: '提出需要，不交出全部隐私', changes: { trust: 9, privacy: 4, action: 6 }, result: '朋友没有追问，只发来了正规机构的联系方式，并问你是否需要陪伴。', type: 'good' },
+        { text: '打了很多字，最后全部删掉', note: '害怕解释，只能继续一个人想', changes: { hours: -2, action: -2 }, result: '两小时过去，你没有失去求助的机会，但仍需要选择下一步。', type: 'warning' },
+      ],
+    },
+    '直接找专业机构': {
+      art: 'clinic', location: '在线咨询入口',
+      copy: '你直接打开了校园健康中心提供的正规咨询入口。',
+      detail: '页面没有要求你先说明身份，只提示准备发生时间、接触方式和防护情况。',
+      choices: [
+        { text: '按下咨询按钮，说明刚整理的信息', note: '先让专业人员了解具体情况', changes: { action: 11 }, result: '你进入了专业评估的入口。工作人员没有下结论，只先确认时间和具体情况。', type: 'good' },
+        { text: '记下电话，但决定再想两个小时', note: '入口已经找到，行动仍被推迟', changes: { hours: -2, delay: 2 }, result: '号码留在备忘录里。好在你还可以随时返回，但等待本身不会提供新的医学信息。', type: 'warning' },
+        { text: '退出页面，改看网友推荐的药物链接', note: '绕开专业评估寻找快捷答案', changes: { hours: -3, action: -7 }, result: '来路不明的药物信息不能替代专业评估，还消耗了继续行动的时间。', type: 'warning' },
+      ],
+    },
+    '还不确定': {
+      art: 'room', location: '凌晨的手机桌面',
+      copy: '搜索、聊天、电话和闹钟都在屏幕上，你不知道先点哪一个。',
+      detail: '没有固定求助习惯并不是失败，你仍然可以给自己安排一个很小的下一步。',
+      choices: [
+        { text: '先设一个十分钟计时，只整理行动入口', note: '用一个小步骤结束原地打转', changes: { action: 8 }, result: '十分钟里，你没有要求自己解决全部问题，只找到了下一步该联系谁。', type: 'good' },
+        { text: '在几个应用之间反复切换', note: '每个页面都看一点，却没有开始行动', changes: { hours: -4, delay: 4, action: -4 }, result: '信息越来越多，能确认的事实却没有增加。四小时已经过去。', type: 'warning' },
+        { text: '先睡一觉，明天再决定', note: '希望醒来后焦虑自然消失', changes: { hours: -12, delay: 12, action: -9 }, result: '一夜过去，焦虑并没有替你作出决定，行动窗口却继续缩短。', type: 'warning' },
+      ],
+    },
+  };
+  const branch = branches[state.profile.helpStyle] || branches['还不确定'];
+  renderNarrative({
+    art: branch.art, location: branch.location, time: '你的第一反应', progress: 17,
+    copy: branch.copy, detail: branch.detail, choices: branch.choices,
+    onChoice: (index) => {
+      const choice = branch.choices[index];
+      adjust(choice.changes);
+      renderProfileBranchFeedback(choice.result, choice.type, '求助习惯带来的第一步', renderRelationshipBranch, 'helpStyleFeedback');
+    },
+  });
+}
+
+function renderRelationshipBranch() {
+  setView('relationshipBranch', 1);
+  const branches = {
+    '单身': {
+      copy: '对方发来一句：“如果专业评估需要我补充什么，你可以说。”',
+      detail: '你们没有关系承诺，但仍可以只沟通与这次情况有关的事实。',
+      choices: [
+        { text: '只确认发生时间、防护情况和意外细节', note: '不要求对方交出身份或检测结果', changes: { trust: 7, action: 5 }, result: '你们把能确认的事实说清楚，没有让关系标签代替风险评估。', type: 'good' },
+        { text: '要求对方先证明自己“没有问题”', note: '用身份保证换取安全感', changes: { trust: -13, judgment: 1 }, result: '对话很快变成审问。即使得到一句保证，也不能替代对这次具体情况的评估。', type: 'warning' },
+      ],
+    },
+    '恋爱中': {
+      copy: '伴侣打来电话：“你是不是还在担心？我们可以一起把事情说清楚。”',
+      detail: '信任让这通电话成为可能，但信任本身不是风险评估工具。',
+      choices: [
+        { text: '“我有点慌，我们先核对事实，再一起找专业评估。”', note: '承认情绪，也保留行动方向', changes: { trust: 10, action: 6 }, result: '你们没有把担心变成互相指责，而是一起核对了专业评估需要的信息。', type: 'good' },
+        { text: '“既然你爱我，你就应该保证我绝对没事。”', note: '让关系承诺代替医学事实', changes: { trust: -15, judgment: 1 }, result: '爱和信任无法提供“绝对没事”的医学保证，这句话也让彼此更难继续沟通。', type: 'warning' },
+      ],
+    },
+    '关系未定义': {
+      copy: '你写下一条消息，又迟迟没有发送：谈防护，会不会让这段关系突然变得沉重？',
+      detail: '关系可以暂时没有名字，但健康沟通不必等到关系被定义。',
+      choices: [
+        { text: '“我们先不定义关系，只把防护发生了什么说清楚。”', note: '把健康沟通和关系承诺分开', changes: { trust: 8, action: 5 }, result: '对方回复了具体信息。你们不必先定义关系，也能完成必要沟通。', type: 'good' },
+        { text: '当作没有发生，避免让关系变复杂', note: '用回避维持表面的轻松', changes: { hours: -5, delay: 5, trust: -5 }, result: '消息没有发出，关系暂时没有变化，但行动时间也没有停下来。', type: 'warning' },
+      ],
+    },
+    '不设定': {
+      copy: '你决定不为这段关系命名，只处理眼前能够确认的事实。',
+      detail: '无论关系状态如何，具体接触和防护情况才是专业评估需要的信息。',
+      choices: [
+        { text: '只询问与这次评估有关的事实', note: '保持最少必要信息', changes: { trust: 6, privacy: 3, action: 5 }, result: '对话停留在必要事实上，没有要求任何人公开更多身份信息。', type: 'good' },
+        { text: '继续追问对方过去的全部关系经历', note: '试图从隐私里推断风险', changes: { trust: -12, privacy: -8, judgment: 1 }, result: '过去的关系经历不能替代这次具体评估，追问却让对方不再愿意继续交流。', type: 'warning' },
+      ],
+    },
+  };
+  const branch = branches[state.profile.relationship] || branches['不设定'];
+  renderNarrative({
+    art: 'room', location: '与对方的对话', time: '消息亮起', progress: 19,
+    copy: branch.copy, detail: branch.detail, choices: branch.choices,
+    onChoice: (index) => {
+      const choice = branch.choices[index];
+      adjust(choice.changes);
+      renderProfileBranchFeedback(choice.result, choice.type, '这段关系中的一次对话', renderExposureDecision, 'relationshipFeedback');
+    },
+  });
+}
+
+function renderProfileBranchFeedback(message, type, label, next, view) {
+  setView(view, 1);
+  renderNarrative({
+    art: 'room', location: label, time: `行动窗口剩余约 ${state.hours} 小时`, progress: 20,
+    copy: '故事因为你的处境和选择向前走了一步。',
+    feedback: message, feedbackType: type,
+    continueLabel: '继续', onContinue: next,
+  });
+}
+
 function renderExposureDecision() {
   setView('exposureDecision', 1);
   const lens = getProfileLens();
   const options = [
     { text: '继续搜索“感染后最早有什么症状”', note: '也许身体会给出答案' },
-    { text: `追问对方${lens.relationship.question}`, note: '希望从对方身份得到保证' },
     { text: '先等一晚，看身体会不会不舒服', note: '明早再决定是否求助' },
     { text: '带着记录，尽快联系正规专业机构', note: '让专业人员结合具体情况评估' },
   ];
   renderNarrative({
     art: 'room', location: '凌晨的宿舍', time: `距离那一晚约 ${70 - state.hours + 2} 小时`, progress: 20,
     copy: '信息已经整理好了。接下来怎么做，才不会让猜测继续消耗时间？',
-    detail: `${lens.help} ${lens.relationship.thought} ${lens.orientation}`,
+    detail: `前面的经历没有替你作出医学判断。${lens.orientation} 现在仍需要根据具体情况开始行动。`,
     choices: options,
     onChoice: (index) => {
       if (index === 0) {
         adjust({ hours: -6, delay: 6, action: -8 });
         renderExposureFeedback('搜索结果列出许多互相矛盾的“早期症状”。六小时过去了，但症状仍不能判断感染状态。', 'warning');
       } else if (index === 1) {
-        adjust({ trust: -12, privacy: -5, judgment: 1 });
-        renderExposureFeedback(`对方感到自己正在被审问。${lens.relationship.feedback}`, 'warning');
-      } else if (index === 2) {
         adjust({ hours: -12, delay: 12, action: -12 });
         renderExposureFeedback('一夜过去，没有症状并不能排除感染。等待身体变化只会消耗PEP的行动窗口。', 'warning');
       } else {
@@ -511,7 +621,138 @@ function renderTransmissionComplete() {
     copy: '恐慌常常来自把“接触”两个字想得太宽。',
     detail: 'HIV有明确的传播条件。共同进餐、拥抱、握手和蚊虫叮咬不会传播；涉及血液或性接触的具体情境，则应基于事实进行评估。',
     feedback: `关系身份、外表和道德评价都不是传播途径。${lens.orientation}`, feedbackType: 'good',
-    continueLabel: '进入第三章', onContinue: renderTestingQuestion,
+    continueLabel: '进入第三章', onContinue: renderIdentityAccessBranch,
+  });
+}
+
+function renderIdentityAccessBranch() {
+  setView('identityAccessBranch', 3);
+  const orientationContext = {
+    '异性恋': '工作人员没有因为这是异性关系就默认“没有风险”，也没有夸大风险。',
+    '同性恋': '工作人员只询问具体接触和防护，没有要求你为性取向辩解。',
+    '双性恋 / 泛性恋': '工作人员没有用一个标签猜测伴侣，也没有让性取向代替具体评估。',
+    '不设定': '工作人员说明：无需公开性取向，只需要提供与这次接触有关的信息。',
+  }[state.profile.orientation] || '';
+  const branches = {
+    '女生': {
+      copy: '走到咨询入口时，你最担心的不是流程，而是会不会先被问“为什么没有保护好自己”。',
+      detail: `${orientationContext} 咨询页上写着：这里不作道德评价。`,
+      choices: [
+        { text: '继续预约，只提供评估需要的信息', changes: { action: 6, privacy: 3 }, result: '接待人员先确认时间和防护情况，没有评价你的选择。你不需要先证明自己“足够谨慎”。', type: 'good' },
+        { text: '因为害怕被评价，先退出页面', changes: { hours: -3, delay: 3, action: -3 }, result: '三小时后，你从正规说明里确认了这里的隐私原则，重新回到预约入口。', type: 'warning' },
+      ],
+    },
+    '男生': {
+      copy: '你在咨询框里三次输入“我有点害怕”，又三次删掉。',
+      detail: `${orientationContext} 表达害怕不会改变事实，却能让专业人员知道你需要怎样的支持。`,
+      choices: [
+        { text: '直接说明：“我很焦虑，也想了解下一步。”', changes: { action: 7, trust: 3 }, result: '对方先回应了你的实际问题，也告诉你焦虑并不需要独自承担。', type: 'good' },
+        { text: '只说“替朋友问问”，隐藏自己的需要', changes: { action: -2 }, result: '工作人员仍提供了正规入口，但模糊的信息让沟通多绕了一圈。你最后补充了真实情况。', type: 'warning' },
+      ],
+    },
+    '非二元 / 其他': {
+      copy: '预约表上的“称谓”是选填项，也允许自行填写。',
+      detail: `${orientationContext} 你不需要先完成一场身份说明，才能获得健康服务。`,
+      choices: [
+        { text: '填写自己舒适的称谓，继续预约', changes: { action: 6, trust: 4 }, result: '后续沟通使用了你填写的称谓，话题随后回到实际需要和专业安排。', type: 'good' },
+        { text: '暂时留空，继续预约', changes: { action: 6, privacy: 4 }, result: '称谓保持空白也没有妨碍服务。身份信息由你决定是否表达。', type: 'good' },
+      ],
+    },
+    '不设定': {
+      copy: '预约表明确标注：称谓与性取向可以不填写。',
+      detail: `${orientationContext} 你选择把注意力留给此刻真正需要处理的事情。`,
+      choices: [
+        { text: '留空并继续预约', changes: { action: 6, privacy: 5 }, result: '页面顺利进入下一步。获得帮助不以公开身份为前提。', type: 'good' },
+        { text: '填写一个临时称谓再继续', changes: { action: 5, privacy: 3 }, result: '你选择了当下舒适的表达方式，健康服务没有要求更多解释。', type: 'good' },
+      ],
+    },
+  };
+  const branch = branches[state.profile.identity] || branches['不设定'];
+  renderNarrative({
+    art: 'clinic', location: '检测咨询入口', time: '第三章 · 到达之前', progress: 49,
+    copy: branch.copy, detail: branch.detail, choices: branch.choices.map((choice) => ({ text: choice.text })),
+    onChoice: (index) => {
+      const choice = branch.choices[index];
+      adjust(choice.changes);
+      setView('identityAccessFeedback', 3);
+      renderNarrative({
+        art: 'clinic', location: '咨询入口', time: '一次真实的求助体验', progress: 50,
+        copy: '身份改变了你走到这里时的顾虑，但没有改变专业评估依据。',
+        feedback: choice.result, feedbackType: choice.type,
+        continueLabel: '继续了解检测', onContinue: renderKnowledgeBranch,
+      });
+    },
+  });
+}
+
+function renderKnowledgeBranch() {
+  setView('knowledgeBranch', 3);
+  const branches = {
+    '第一次了解': {
+      copy: '三个词第一次同时出现在你面前：PrEP、PEP和HIV检测。',
+      detail: '你需要先找出“潜在暴露后，应尽快接受专业评估”的那一项。',
+      choices: [
+        { text: 'PrEP', note: '暴露前预防' },
+        { text: 'PEP', note: '潜在暴露后的紧急预防' },
+        { text: 'HIV检测', note: '了解感染状态' },
+      ],
+      correct: 1,
+      success: '你把时间顺序理清了：PrEP用于暴露前，PEP用于潜在暴露后，检测用于了解感染状态。',
+      retry: '这些措施处于不同阶段。当前题目问的是潜在暴露后的紧急预防，因此是PEP。',
+    },
+    '看过一些科普': {
+      copy: '你记得“窗口期”这个词，于是想把网上看到的某个天数直接套到自己身上。',
+      detail: '检测方法和具体情况不同，应该怎样处理？',
+      choices: [
+        { text: '只记一个网上看到的天数', note: '所有情况都使用同一时间点' },
+        { text: '按专业建议安排检测和必要复查', note: '结合检测方法与具体情况' },
+        { text: '等出现症状再决定', note: '让身体感觉替代检测' },
+      ],
+      correct: 1,
+      success: '你没有把一个数字套给所有人，而是保留了专业人员根据具体情况安排检测和复查的空间。',
+      retry: '窗口期并不是一个能脱离检测方法和具体情况套用的万能数字，也不能靠症状代替检测。',
+    },
+    '参加过培训': {
+      copy: '熟悉的知识到了自己身上，突然不像课堂里那么整齐。',
+      detail: '一次检测结果能否自动结束所有后续安排？',
+      choices: [
+        { text: '可以，任何一次检测都足够', note: '忽略检测时间与专业安排' },
+        { text: '不能一概而论，应完成建议的检测和复查', note: '把知识放回具体情境' },
+        { text: '只要没有症状就可以结束', note: '用症状替代结果解释' },
+      ],
+      correct: 1,
+      success: '你没有因为学过知识就替自己下结论，而是把解释交回具体检测时间和专业建议。',
+      retry: '培训知识提供判断框架，却不能替代个体化安排；一次检测是否足够需要结合时间和专业建议。',
+    },
+    '不确定': {
+      copy: '信息很多，你决定先抓住一个不会错的行动原则。',
+      detail: '哪一句最适合成为接下来检测安排的起点？',
+      choices: [
+        { text: '没有症状就不需要检测' },
+        { text: '检测等于已经感染' },
+        { text: '按专业建议检测，不用靠症状猜测' },
+      ],
+      correct: 2,
+      success: '你不需要一次记住全部术语，先记住不靠症状猜测、按专业建议检测就够了。',
+      retry: '检测是一种了解状态的工具，不等于已经感染；没有症状也不能排除感染。',
+    },
+  };
+  const branch = branches[state.profile.knowledge] || branches['不确定'];
+  renderNarrative({
+    art: 'campus', location: '你的知识路径', time: '进入检测章节', progress: 51,
+    copy: branch.copy, detail: branch.detail, choices: branch.choices,
+    onChoice: (index) => {
+      const correct = index === branch.correct;
+      adjust(correct ? { action: 5 } : { action: -2 });
+      setView('knowledgeFeedback', 3);
+      renderNarrative({
+        art: 'campus', location: '信息重新排好顺序', time: '知识进入情境', progress: 52,
+        copy: correct ? '你找到了适合自己的理解入口。' : '这次没有停在“答错”上。',
+        feedback: correct ? branch.success : branch.retry,
+        feedbackType: correct ? 'good' : 'warning',
+        continueLabel: '考虑检测安排', onContinue: renderTestingQuestion,
+      });
+    },
   });
 }
 
@@ -880,11 +1121,19 @@ function renderCurrent() {
     cover: renderCover,
     profile: renderProfile,
     investigation: renderInvestigation,
+    helpStyleBranch: renderHelpStyleBranch,
+    relationshipBranch: renderRelationshipBranch,
+    helpStyleFeedback: renderRelationshipBranch,
+    relationshipFeedback: renderExposureDecision,
     exposureDecision: renderExposureDecision,
     exposureFeedback: renderExposureDecision,
     exposureComplete: () => renderExposureFeedback('你把发生时间、接触方式和防护情况告诉了专业人员。是否需要PEP将由专业人员评估。', 'good', true),
     transmission: renderTransmission,
     transmissionComplete: renderTransmissionComplete,
+    identityAccessBranch: renderIdentityAccessBranch,
+    identityAccessFeedback: renderKnowledgeBranch,
+    knowledgeBranch: renderKnowledgeBranch,
+    knowledgeFeedback: renderTestingQuestion,
     testingQuestion: renderTestingQuestion,
     testingFeedback: renderTestingQuestion,
     testingPrivacy: renderTestingPrivacy,
