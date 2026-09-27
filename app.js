@@ -2,7 +2,7 @@ const chapters = [
   { number: '第一章', title: '凌晨的消息' },
   { number: '第二章', title: '倒计时开始' },
   { number: '第三章', title: '找到入口' },
-  { number: '第四章', title: '第28天' },
+  { number: '第四章', title: '陪他去检测' },
   { number: '第五章', title: '下一次可以更早' },
   { number: '第六章', title: '发出去之前' },
 ];
@@ -445,16 +445,8 @@ function showAssessmentJourney() {
     els.toolView.hidden = true;
     addMessage('互助提示', '经专业评估，医务人员建议Q启动PEP。PEP是潜在暴露后的预防措施，不代表已经感染；应越早开始越好，最迟不超过暴露后72小时。', { type: 'system', note: true });
     addMessage('Q', '我已经按照医嘱开始了。接下来是不是拿到药就结束了？');
-    continueButton('进入第28天', beginChapterFour);
+    continueButton('查看PEP后续计划', () => showMedicationCalendar(0, beginChapterFour));
   });
-}
-
-function beginChapterFour() {
-  setChapter(3);
-  timeDivider('PEP记录 · 第1天');
-  addMessage('Q', '医生说通常需要连续服用28天。我怕自己忘记。');
-  addMessage('小安', '我们可以帮你做一个不包含身份信息的提醒清单。', { self: true });
-  showMedicationCalendar(0);
 }
 
 const medicationScenarios = [
@@ -500,7 +492,7 @@ const medicationScenarios = [
   },
 ];
 
-function showMedicationCalendar(index) {
+function showMedicationCalendar(index, onComplete = beginChapterFive) {
   els.interactionDock.hidden = true;
   els.toolView.hidden = false;
   const item = medicationScenarios[index];
@@ -532,10 +524,103 @@ function showMedicationCalendar(index) {
       const next = document.createElement('div');
       next.className = 'tap-fallback';
       const nextButton = document.createElement('button');
-      nextButton.textContent = index === medicationScenarios.length - 1 ? '进入下一章 →' : '继续记录 →';
+      nextButton.textContent = index === medicationScenarios.length - 1 ? '继续故事 →' : '继续记录 →';
       nextButton.addEventListener('click', () => {
-        if (index === medicationScenarios.length - 1) beginChapterFive();
-        else showMedicationCalendar(index + 1);
+        if (index === medicationScenarios.length - 1) onComplete();
+        else showMedicationCalendar(index + 1, onComplete);
+      });
+      next.appendChild(nextButton);
+      els.toolView.appendChild(next);
+      container.querySelectorAll('button').forEach((itemButton) => { itemButton.disabled = true; });
+    });
+    container.appendChild(button);
+  });
+}
+
+function beginChapterFour() {
+  setChapter(3);
+  timeDivider('一周后 · 校园健康中心');
+  addMessage('同学', '这周能陪我去一趟检测吗？没什么大事，我只是想确认一下。');
+  addMessage('同学', '我不太想解释原因，也不想让别人知道。');
+  addMessage('小安', '你不用现在解释。你想去的时候，我可以陪你，也可以帮你找正规机构。', { self: true });
+  addMessage('互助提示', '这里没有任何人的检测结果。陪伴的重点是支持对方求助，而不是猜测结果。', { type: 'system', note: true });
+  showTestingSupport(0);
+}
+
+const testingSupportScenes = [
+  {
+    title: '朋友不想解释原因，你会怎么回应？',
+    copy: '是否发生过什么、是否感染，都属于对方的隐私。先回应陪伴和实际需要。',
+    choices: [
+      { label: '“好，我陪你去。你不用现在解释。”', correct: true, result: '对方愿意继续安排检测，信任感保持下来。' },
+      { label: '“是不是发生了什么高风险的事？”', result: '对方开始担心自己必须先交代经历，差点放弃求助。' },
+      { label: '“你是不是感染HIV了？”', result: '追问直接把检测等同于感染，对方感到被暴露和评判。' },
+    ],
+  },
+  {
+    title: '陪同检测时，哪些信息应该记住？',
+    copy: '检测用于了解感染状态，不是对一个人的生活作评价。具体项目和时间以专业机构安排为准。',
+    choices: [
+      { label: '检测是确认状态的方式，不能靠症状代替', correct: true, result: '朋友知道了为什么要检测，也没有被迫公开私人经历。' },
+      { label: '没症状就不用检测', result: '朋友把没有症状当成结果，可能错过了解状态的机会。' },
+      { label: '检测结果应该马上告诉陪同的人', result: '陪同不等于有权接收结果，检测隐私边界被混淆。' },
+    ],
+  },
+  {
+    title: '朋友说：“不要把这件事告诉别人。”',
+    copy: '健康信息属于个人隐私。除非当事人明确同意，否则不能转发、截图或替对方解释。',
+    choices: [
+      { label: '尊重他的决定，只在他需要时提供帮助', correct: true, result: '朋友知道自己的信息不会被转发，愿意继续接受专业咨询。' },
+      { label: '先告诉最亲近的朋友，让大家一起关心他', result: '善意也可能变成未经同意的信息扩散，朋友开始回避求助。' },
+      { label: '把聊天记录保存下来，以后方便证明情况', result: '保存和传播都可能增加隐私泄露风险，应只保留必要信息。' },
+    ],
+  },
+  {
+    title: '有人说：“去做HIV检测的人，生活肯定很乱。”',
+    copy: '把检测和道德评价绑定，会阻止更多人及时求助。',
+    choices: [
+      { label: '“检测是了解健康状态，不代表已经感染，更不是道德评价。”', correct: true, result: '讨论回到科学信息，检测不再被描述成一种羞耻标签。' },
+      { label: '“这也许只是少数人的问题。”', result: '没有纠正误区，仍然把检测和某些人群绑定在一起。' },
+      { label: '不说什么，免得惹麻烦', result: '错误说法继续传播，真正需要帮助的人可能因此沉默。' },
+    ],
+  },
+];
+
+function showTestingSupport(index) {
+  els.interactionDock.hidden = true;
+  els.toolView.hidden = false;
+  const scene = testingSupportScenes[index];
+  els.toolView.innerHTML = `
+    <div class="tool-head"><div><p>陪伴与隐私</p><h3>${scene.title}</h3></div><span class="tool-count">${index + 1} / ${testingSupportScenes.length}</span></div>
+    <p class="tool-copy">${scene.copy}</p>
+    <div class="scenario-grid" id="testingChoices"></div>`;
+  const container = document.getElementById('testingChoices');
+  scene.choices.forEach((option) => {
+    const button = document.createElement('button');
+    button.className = 'scenario-card';
+    button.type = 'button';
+    button.innerHTML = `<b>${option.label}</b><small>选择这条回复</small>`;
+    button.addEventListener('click', () => {
+      if (option.correct) state.support += 5;
+      else {
+        state.support -= 6;
+        if (index === 2) state.privacy -= 12;
+        if (index === 3) state.judgment += 1;
+      }
+      updateStatus();
+      const feedback = document.createElement('div');
+      feedback.className = `feedback ${option.correct ? 'positive' : 'negative'}`;
+      feedback.innerHTML = option.correct
+        ? `<strong>行动结果：</strong>${option.result}`
+        : `<strong>选择后果：</strong>${option.result}<br>${scene.copy}`;
+      els.toolView.appendChild(feedback);
+      const next = document.createElement('div');
+      next.className = 'tap-fallback';
+      const nextButton = document.createElement('button');
+      nextButton.textContent = index === testingSupportScenes.length - 1 ? '进入下一章 →' : '继续陪伴 →';
+      nextButton.addEventListener('click', () => {
+        if (index === testingSupportScenes.length - 1) beginChapterFive();
+        else showTestingSupport(index + 1);
       });
       next.appendChild(nextButton);
       els.toolView.appendChild(next);
@@ -547,7 +632,7 @@ function showMedicationCalendar(index) {
 
 function beginChapterFive() {
   setChapter(4);
-  timeDivider('疗程之后 · 新的问题');
+  timeDivider('检测之后 · 新的问题');
   addMessage('Q', '如果以后仍可能遇到类似风险，是不是每次都只能等到事后？');
   addMessage('小安', '不一定。我们把“暴露前、暴露后、确认状态”分别做成行动方案。', { self: true });
   addMessage('互助提示', '这里不是测验。每个阶段都会先出现生活情境，再把可用工具加入Q的计划。', { type: 'system', note: true });
