@@ -65,6 +65,61 @@
           <div class="chapter-progress" aria-label="游戏进度"><i id="progressBar"></i></div>
         </div>
 
+        <section class="setup-view" id="setupView" aria-labelledby="setupTitle">
+          <div class="setup-kicker">进入故事之前</div>
+          <h2 id="setupTitle">创建你的视角</h2>
+          <p class="setup-intro">这些设定只用于改变称谓、对话语境和情绪体验，不会改变HIV传播风险的医学判断。每一项都可以选择“不设定”。</p>
+          <div class="profile-form">
+            <fieldset class="profile-group">
+              <legend>你希望如何称呼自己？</legend>
+              <div class="profile-options">
+                <button class="profile-option" type="button" data-profile-key="identity" data-profile-value="女生">女生</button>
+                <button class="profile-option" type="button" data-profile-key="identity" data-profile-value="男生">男生</button>
+                <button class="profile-option" type="button" data-profile-key="identity" data-profile-value="非二元/其他">非二元 / 其他</button>
+                <button class="profile-option" type="button" data-profile-key="identity" data-profile-value="不设定">不设定</button>
+              </div>
+            </fieldset>
+            <fieldset class="profile-group">
+              <legend>你的情感与亲密关系视角</legend>
+              <div class="profile-options">
+                <button class="profile-option" type="button" data-profile-key="orientation" data-profile-value="异性恋">异性恋</button>
+                <button class="profile-option" type="button" data-profile-key="orientation" data-profile-value="同性恋">同性恋</button>
+                <button class="profile-option" type="button" data-profile-key="orientation" data-profile-value="双性恋/泛性恋">双性恋 / 泛性恋</button>
+                <button class="profile-option" type="button" data-profile-key="orientation" data-profile-value="不设定">不设定</button>
+              </div>
+            </fieldset>
+            <fieldset class="profile-group">
+              <legend>你目前的关系状态</legend>
+              <div class="profile-options">
+                <button class="profile-option" type="button" data-profile-key="relationship" data-profile-value="单身">单身</button>
+                <button class="profile-option" type="button" data-profile-key="relationship" data-profile-value="恋爱中">恋爱中</button>
+                <button class="profile-option" type="button" data-profile-key="relationship" data-profile-value="关系未定义">关系未定义</button>
+                <button class="profile-option" type="button" data-profile-key="relationship" data-profile-value="不设定">不设定</button>
+              </div>
+            </fieldset>
+            <fieldset class="profile-group">
+              <legend>遇到健康问题时，你通常会？</legend>
+              <div class="profile-options">
+                <button class="profile-option" type="button" data-profile-key="helpStyle" data-profile-value="先自己查资料">先自己查资料</button>
+                <button class="profile-option" type="button" data-profile-key="helpStyle" data-profile-value="先问信任的人">先问信任的人</button>
+                <button class="profile-option" type="button" data-profile-key="helpStyle" data-profile-value="直接找专业机构">直接找专业机构</button>
+                <button class="profile-option" type="button" data-profile-key="helpStyle" data-profile-value="不确定">还不确定</button>
+              </div>
+            </fieldset>
+            <fieldset class="profile-group">
+              <legend>你接触过哪些防艾知识？</legend>
+              <div class="profile-options">
+                <button class="profile-option" type="button" data-profile-key="knowledgeLevel" data-profile-value="第一次了解">第一次了解</button>
+                <button class="profile-option" type="button" data-profile-key="knowledgeLevel" data-profile-value="看过相关科普">看过相关科普</button>
+                <button class="profile-option" type="button" data-profile-key="knowledgeLevel" data-profile-value="参加过培训">参加过培训</button>
+                <button class="profile-option" type="button" data-profile-key="knowledgeLevel" data-profile-value="不确定">不确定</button>
+              </div>
+            </fieldset>
+          </div>
+          <p class="setup-note" id="setupNote">完成五项选择后开始。你可以在身份和关系设定中选择“不设定”。</p>
+          <button class="setup-start" id="startGameButton" type="button" disabled>开始故事 <span>→</span></button>
+        </section>
+
         <section class="chat-log" id="chatLog" aria-live="polite"></section>
 
         <section class="interaction-dock" id="interactionDock">

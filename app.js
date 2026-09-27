@@ -17,6 +17,13 @@ const state = {
   medicationMistakes: 0,
   informationFound: new Set(),
   dismissedRumors: new Set(),
+  profile: {
+    identity: '',
+    orientation: '',
+    relationship: '',
+    helpStyle: '',
+    knowledgeLevel: '',
+  },
 };
 
 const els = {
@@ -40,6 +47,17 @@ const els = {
   supportMeter: document.getElementById('supportMeter'),
   privacyMeter: document.getElementById('privacyMeter'),
   restartDialog: document.getElementById('restartDialog'),
+  setupView: document.getElementById('setupView'),
+  setupNote: document.getElementById('setupNote'),
+  startGameButton: document.getElementById('startGameButton'),
+};
+
+const profileDraft = {
+  identity: '',
+  orientation: '',
+  relationship: '',
+  helpStyle: '',
+  knowledgeLevel: '',
 };
 
 function clamp(value, min, max) {
@@ -87,10 +105,11 @@ function addMessage(sender, text, options = {}) {
   const message = document.createElement('article');
   const type = options.self ? 'self' : options.type || 'q';
   message.className = `message ${type}${options.note ? ' note' : ''}`;
-  const initial = sender === 'Q' ? '?' : sender === '互助提示' ? 'i' : sender.slice(0, 1);
+  const visibleSender = options.self ? '你' : sender;
+  const initial = visibleSender === 'Q' ? '?' : visibleSender === '互助提示' ? 'i' : visibleSender.slice(0, 1);
   message.innerHTML = options.self
-    ? `<div class="bubble-wrap"><span class="sender">${sender}</span><div class="bubble">${text}</div><span class="message-time">刚刚</span></div><div class="message-avatar">${initial}</div>`
-    : `<div class="message-avatar">${initial}</div><div class="bubble-wrap"><span class="sender">${sender}</span><div class="bubble">${text}</div><span class="message-time">刚刚</span></div>`;
+    ? `<div class="bubble-wrap"><span class="sender">${visibleSender}</span><div class="bubble">${text}</div><span class="message-time">刚刚</span></div><div class="message-avatar">${initial}</div>`
+    : `<div class="message-avatar">${initial}</div><div class="bubble-wrap"><span class="sender">${visibleSender}</span><div class="bubble">${text}</div><span class="message-time">刚刚</span></div>`;
   els.chatLog.appendChild(message);
   els.chatLog.scrollTop = els.chatLog.scrollHeight;
 }
@@ -125,8 +144,53 @@ function spendTime(hours) {
   updateStatus();
 }
 
+function updateProfileSetup() {
+  const keys = Object.keys(profileDraft);
+  const selectedCount = keys.filter((key) => profileDraft[key]).length;
+  document.querySelectorAll('.profile-option').forEach((button) => {
+    button.classList.toggle('selected', profileDraft[button.dataset.profileKey] === button.dataset.profileValue);
+  });
+  els.startGameButton.disabled = selectedCount !== keys.length;
+  els.setupNote.textContent = selectedCount === keys.length
+    ? '设定完成。它们只会影响你的叙事视角，不会改变医学事实。'
+    : `完成五项选择后开始，还差 ${keys.length - selectedCount} 项。身份和关系设定可以选择“不设定”。`;
+}
+
+function showProfileSetup() {
+  setChapter(0);
+  els.setupView.hidden = false;
+  els.chatLog.hidden = true;
+  els.interactionDock.hidden = true;
+  els.toolView.hidden = true;
+  els.endingView.hidden = true;
+  els.timerPill.classList.remove('stopped');
+  els.timerText.textContent = formatTime();
+  Object.keys(profileDraft).forEach((key) => { profileDraft[key] = ''; });
+  updateProfileSetup();
+}
+
+function startWithProfile() {
+  state.profile = { ...profileDraft };
+  beginGame();
+}
+
 function beginGame() {
   setChapter(0);
+  els.setupView.hidden = true;
+  els.chatLog.hidden = false;
+  const styleHint = {
+    '先自己查资料': '你平时习惯先自己搜索，这次要特别留意：搜索结果不能替代专业评估。',
+    '先问信任的人': '你平时习惯先找信任的人，这次也可以把关键时间和情况交给专业机构判断。',
+    '直接找专业机构': '你平时更愿意直接寻求专业帮助，这次仍然要先记录时间、接触方式和防护情况。',
+    '还不确定': '你还不确定该从哪里开始，故事会把每一步行动拆开。',
+  }[state.profile.helpStyle];
+  const knowledgeHint = {
+    '第一次了解': '接下来会从基础概念开始，不需要预习。',
+    '看过相关科普': '遇到不确定的地方，仍然以专业机构和游戏中的核对信息为准。',
+    '参加过培训': '你可以把已有知识带入选择，但具体医疗判断仍交给专业人员。',
+    '不确定': '遇到不熟悉的概念时，可以通过情境反馈逐步理解。',
+  }[state.profile.knowledgeLevel];
+  addMessage('互助提示', `本局视角：${state.profile.identity}、${state.profile.orientation}、${state.profile.relationship}。这些设定只影响叙事语境，不代表任何风险判断。${styleHint}${knowledgeHint}`, { type: 'system', note: true });
   timeDivider('凌晨 02:13 · 今晚最后一条匿名消息');
   addMessage('Q', '你好。刚才安全套好像破了，我不知道这算不算暴露。');
   addMessage('Q', '我很害怕，也不知道该找谁。请不要问我是谁。');
@@ -873,15 +937,23 @@ function resetGame() {
   state.medicationMistakes = 0;
   state.informationFound = new Set();
   state.dismissedRumors = new Set();
+  state.profile = { identity: '', orientation: '', relationship: '', helpStyle: '', knowledgeLevel: '' };
   els.chatLog.hidden = false;
   els.timerPill.classList.remove('stopped');
   els.restartDialog.close();
-  beginGame();
+  showProfileSetup();
 }
 
 document.getElementById('restartButton').addEventListener('click', () => els.restartDialog.showModal());
 document.getElementById('cancelRestart').addEventListener('click', () => els.restartDialog.close());
 document.getElementById('confirmRestart').addEventListener('click', resetGame);
 document.getElementById('playAgainButton').addEventListener('click', resetGame);
+document.querySelectorAll('.profile-option').forEach((button) => {
+  button.addEventListener('click', () => {
+    profileDraft[button.dataset.profileKey] = button.dataset.profileValue;
+    updateProfileSetup();
+  });
+});
+els.startGameButton.addEventListener('click', startWithProfile);
 
 resetGame();

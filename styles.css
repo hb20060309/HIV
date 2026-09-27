@@ -110,6 +110,22 @@ button { color: inherit; font: inherit; }
 .chapter-progress { width: min(34%, 180px); height: 4px; overflow: hidden; background: #d6d4ca; }
 .chapter-progress i { display: block; width: 8%; height: 100%; background: var(--coral); transition: width .35s ease; }
 
+.setup-view { flex: 1; min-height: 520px; padding: 35px 28px 32px; background: var(--paper); }
+.setup-kicker { color: var(--coral); font-size: 10px; font-weight: 700; }
+.setup-view h2 { margin: 6px 0 8px; font-family: Georgia, "Songti SC", serif; font-size: 28px; font-weight: 600; }
+.setup-intro { max-width: 610px; margin: 0 0 20px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.profile-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; max-width: 650px; }
+.profile-group { min-width: 0; margin: 0; padding: 13px; border: 1px solid var(--line); background: rgba(255,255,255,.7); }
+.profile-group legend { padding: 0 5px; color: var(--green); font-size: 12px; font-weight: 700; }
+.profile-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
+.profile-option { min-height: 37px; padding: 7px 8px; border: 1px solid #d3d7cf; background: #fff; color: #59635f; text-align: left; font-size: 11px; cursor: pointer; transition: .18s ease; }
+.profile-option:hover { border-color: var(--coral); }
+.profile-option.selected { border-color: var(--green); background: var(--green-soft); color: var(--green); font-weight: 700; box-shadow: inset 0 -2px 0 var(--green); }
+.setup-note { margin: 17px 0 10px; color: var(--muted); font-size: 10px; }
+.setup-start { min-width: 150px; padding: 10px 15px; border: 0; border-bottom: 2px solid var(--coral); background: transparent; color: #a44938; font-weight: 700; cursor: pointer; }
+.setup-start:disabled { color: #a6aaa5; border-bottom-color: #cdd0c9; cursor: not-allowed; }
+.setup-start span { margin-left: 7px; font-size: 16px; }
+
 .chat-log {
   flex: 1;
   min-height: 410px;
@@ -296,6 +312,9 @@ button { color: inherit; font: inherit; }
   .timer-pill strong { font-size: 14px; }
   .chapter-band { padding: 13px 15px 11px; }
   .chapter-band h2 { font-size: 20px; }
+  .setup-view { min-height: calc(100vh - 180px); padding: 26px 15px 30px; }
+  .setup-view h2 { font-size: 25px; }
+  .profile-form { grid-template-columns: 1fr; gap: 10px; }
   .chat-log { min-height: 430px; max-height: none; padding: 18px 13px 14px; }
   .bubble-wrap { max-width: calc(100% - 43px); }
   .bubble { font-size: 14px; }
