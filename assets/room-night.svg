@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">夜晚的大学宿舍</title>
+  <desc id="desc">窗外是校园夜色，书桌上放着手机、台灯、笔记本和一杯水。</desc>
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#31565a"/><stop offset="1" stop-color="#18383a"/></linearGradient>
+    <linearGradient id="window" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#0d1c35"/><stop offset="1" stop-color="#24455b"/></linearGradient>
+    <linearGradient id="desk" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#754c3b"/><stop offset="1" stop-color="#4c302a"/></linearGradient>
+    <radialGradient id="light" cx=".72" cy=".45" r=".38"><stop stop-color="#ffe5a4" stop-opacity=".85"/><stop offset="1" stop-color="#ffe5a4" stop-opacity="0"/></radialGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#061719" flood-opacity=".4"/></filter>
+  </defs>
+  <rect width="1440" height="900" fill="url(#wall)"/>
+  <circle cx="1020" cy="390" r="380" fill="url(#light)"/>
+  <rect x="100" y="88" width="555" height="410" rx="8" fill="#102427" stroke="#7ba1a0" stroke-width="14"/>
+  <rect x="125" y="113" width="505" height="360" fill="url(#window)"/>
+  <path d="M378 113v360M125 290h505" stroke="#7ba1a0" stroke-width="10"/>
+  <circle cx="220" cy="185" r="33" fill="#f7d988"/>
+  <g fill="#d6e6e0" opacity=".75"><circle cx="510" cy="170" r="3"/><circle cx="560" cy="230" r="4"/><circle cx="185" cy="350" r="3"/><circle cx="460" cy="380" r="2"/><circle cx="320" cy="220" r="2"/></g>
+  <path d="M125 428l110-74 78 43 94-101 118 105 105-68v140H125z" fill="#162f3f"/>
+  <g opacity=".86"><rect x="702" y="100" width="260" height="180" rx="5" fill="#e9e2cf"/><rect x="724" y="122" width="216" height="136" fill="#c76f5a"/><circle cx="832" cy="190" r="45" fill="#f0c674"/><path d="M760 235c45-60 95-78 145-20v43H724z" fill="#23504a"/></g>
+  <path d="M0 690h1440v210H0z" fill="#152d2d"/>
+  <path d="M470 585h920l50 142H420z" fill="url(#desk)" filter="url(#shadow)"/>
+  <path d="M520 727h850v42H520z" fill="#3c2722"/>
+  <path d="M600 760h48v140h-48zM1240 760h48v140h-48z" fill="#2e2320"/>
+  <g filter="url(#shadow)">
+    <rect x="844" y="532" width="115" height="176" rx="18" fill="#0c1516" stroke="#b9cdc5" stroke-width="4"/>
+    <rect x="856" y="549" width="91" height="139" rx="11" fill="#eef5ef"/>
+    <circle cx="901" cy="698" r="5" fill="#7f918d"/>
+    <rect x="869" y="568" width="64" height="8" rx="4" fill="#cf6b54"/>
+    <rect x="869" y="587" width="48" height="6" rx="3" fill="#8b9b96"/>
+    <rect x="869" y="602" width="58" height="6" rx="3" fill="#8b9b96"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M1100 565h130l24 130h-178z" fill="#e9e1cd"/>
+    <path d="M1114 590h105M1109 616h116M1104 642h126" stroke="#849892" stroke-width="5"/>
+    <path d="M1082 685l164-95" stroke="#db7a60" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <g>
+    <path d="M1012 600v-175c0-55 35-98 88-98" fill="none" stroke="#1a2928" stroke-width="18" stroke-linecap="round"/>
+    <path d="M1088 324h107l-25 85h-112z" fill="#e2b85f"/>
+    <ellipse cx="1124" cy="420" rx="100" ry="28" fill="#f3c66b" opacity=".32"/>
+    <ellipse cx="1012" cy="610" rx="75" ry="18" fill="#172625"/>
+  </g>
+  <g filter="url(#shadow)">
+    <path d="M705 635h95l16 63H688z" fill="#eef2ea"/>
+    <path d="M709 646h85M703 662h96M697 678h108" stroke="#a6b2ac" stroke-width="4"/>
+    <rect x="662" y="612" width="26" height="91" rx="7" fill="#e4c871"/>
+  </g>
+  <g><rect x="280" y="510" width="180" height="190" rx="10" fill="#243d3b"/><rect x="303" y="535" width="134" height="130" fill="#d9e3dd"/><path d="M325 566h90M325 594h70M325 622h82" stroke="#55736b" stroke-width="8"/></g>
+  <path d="M0 760c180-25 310 8 460 140H0z" fill="#233e3c"/>
+</svg>

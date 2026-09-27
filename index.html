@@ -3,170 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#173f3b" />
-    <meta name="description" content="一款围绕 HIV 暴露后预防 PEP 的校园匿名求助互动叙事游戏。" />
-    <title>我们先说清楚 72小时未读</title>
+    <meta name="theme-color" content="#132b27" />
+    <meta name="description" content="《我们先说清楚》是一款关于HIV科学预防、检测、隐私与支持的校园互动叙事游戏。" />
+    <title>我们先说清楚｜互动叙事游戏</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <aside class="story-rail" aria-label="章节导航">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true">72</span>
-          <div>
-            <p>我们先说清楚</p>
-            <h1>72小时未读</h1>
-          </div>
-        </div>
+    <main id="app" class="app" aria-live="polite"></main>
 
-        <ol class="chapter-list" id="chapterList">
-          <li class="active"><span>01</span><div><b>凌晨的消息</b><small>先问有效信息</small></div></li>
-          <li><span>02</span><div><b>倒计时开始</b><small>72小时行动窗口</small></div></li>
-          <li><span>03</span><div><b>找到入口</b><small>专业评估</small></div></li>
-          <li><span>04</span><div><b>陪他去检测</b><small>检测与隐私边界</small></div></li>
-          <li><span>05</span><div><b>下一次更早</b><small>认识PrEP</small></div></li>
-          <li><span>06</span><div><b>发出去之前</b><small>隐私与反歧视</small></div></li>
-        </ol>
+    <dialog id="factDialog" class="dialog fact-dialog">
+      <button class="dialog-close" data-close="factDialog" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">随身事实卡</p>
+      <h2>需要时，先看这里</h2>
+      <div class="fact-grid">
+        <article><strong>72小时</strong><p>PEP应尽早评估，最迟不超过潜在暴露后72小时。</p></article>
+        <article><strong>28天</strong><p>如经评估启动PEP，通常需要连续服用28天，具体遵医嘱。</p></article>
+        <article><strong>不能靠症状</strong><p>感染状态需要通过检测了解，没有症状不能排除感染。</p></article>
+        <article><strong>日常接触不传播</strong><p>一起吃饭、拥抱、握手和蚊虫叮咬不会传播HIV。</p></article>
+        <article><strong>检测是隐私</strong><p>陪伴不等于有权知道结果，更不能替别人公开。</p></article>
+        <article><strong>U=U</strong><p>规范治疗并持续达到病毒载量检测不到时，不会通过性行为传播HIV。</p></article>
+      </div>
+      <p class="dialog-note">具体检测、用药与随访安排，请咨询当地正规医疗卫生机构。</p>
+    </dialog>
 
-        <div class="status-panel">
-          <div class="status-row">
-            <span>行动窗口</span>
-            <strong id="railTimer">70:00:00</strong>
-          </div>
-          <div class="status-row">
-            <span>支持</span>
-            <div class="meter"><i id="supportMeter"></i></div>
-          </div>
-          <div class="status-row">
-            <span>隐私</span>
-            <div class="meter privacy"><i id="privacyMeter"></i></div>
-          </div>
-        </div>
-      </aside>
-
-      <section class="phone-stage">
-        <header class="app-header">
-          <div class="account-avatar" aria-hidden="true"><span></span><i></i></div>
-          <div class="account-copy">
-            <p>校园青年健康互助</p>
-            <span><i></i> 匿名会话已开启</span>
-          </div>
-          <div class="header-actions">
-            <div class="timer-pill" id="timerPill"><span>剩余</span><strong id="timerText">70:00:00</strong></div>
-            <button class="icon-button" id="restartButton" type="button" aria-label="重新开始" title="重新开始">↻</button>
-          </div>
-        </header>
-
-        <div class="chapter-band">
-          <div>
-            <span id="chapterNumber">第一章</span>
-            <h2 id="chapterTitle">凌晨的消息</h2>
-          </div>
-          <div class="chapter-progress" aria-label="游戏进度"><i id="progressBar"></i></div>
-        </div>
-
-        <section class="setup-view" id="setupView" aria-labelledby="setupTitle">
-          <div class="setup-kicker">进入故事之前</div>
-          <h2 id="setupTitle">创建你的视角</h2>
-          <p class="setup-intro">这些设定只用于改变称谓、对话语境和情绪体验，不会改变HIV传播风险的医学判断。每一项都可以选择“不设定”。</p>
-          <div class="profile-form">
-            <fieldset class="profile-group">
-              <legend>你希望如何称呼自己？</legend>
-              <div class="profile-options">
-                <button class="profile-option" type="button" data-profile-key="identity" data-profile-value="女生">女生</button>
-                <button class="profile-option" type="button" data-profile-key="identity" data-profile-value="男生">男生</button>
-                <button class="profile-option" type="button" data-profile-key="identity" data-profile-value="非二元/其他">非二元 / 其他</button>
-                <button class="profile-option" type="button" data-profile-key="identity" data-profile-value="不设定">不设定</button>
-              </div>
-            </fieldset>
-            <fieldset class="profile-group">
-              <legend>你的情感与亲密关系视角</legend>
-              <div class="profile-options">
-                <button class="profile-option" type="button" data-profile-key="orientation" data-profile-value="异性恋">异性恋</button>
-                <button class="profile-option" type="button" data-profile-key="orientation" data-profile-value="同性恋">同性恋</button>
-                <button class="profile-option" type="button" data-profile-key="orientation" data-profile-value="双性恋/泛性恋">双性恋 / 泛性恋</button>
-                <button class="profile-option" type="button" data-profile-key="orientation" data-profile-value="不设定">不设定</button>
-              </div>
-            </fieldset>
-            <fieldset class="profile-group">
-              <legend>你目前的关系状态</legend>
-              <div class="profile-options">
-                <button class="profile-option" type="button" data-profile-key="relationship" data-profile-value="单身">单身</button>
-                <button class="profile-option" type="button" data-profile-key="relationship" data-profile-value="恋爱中">恋爱中</button>
-                <button class="profile-option" type="button" data-profile-key="relationship" data-profile-value="关系未定义">关系未定义</button>
-                <button class="profile-option" type="button" data-profile-key="relationship" data-profile-value="不设定">不设定</button>
-              </div>
-            </fieldset>
-            <fieldset class="profile-group">
-              <legend>遇到健康问题时，你通常会？</legend>
-              <div class="profile-options">
-                <button class="profile-option" type="button" data-profile-key="helpStyle" data-profile-value="先自己查资料">先自己查资料</button>
-                <button class="profile-option" type="button" data-profile-key="helpStyle" data-profile-value="先问信任的人">先问信任的人</button>
-                <button class="profile-option" type="button" data-profile-key="helpStyle" data-profile-value="直接找专业机构">直接找专业机构</button>
-                <button class="profile-option" type="button" data-profile-key="helpStyle" data-profile-value="不确定">还不确定</button>
-              </div>
-            </fieldset>
-            <fieldset class="profile-group">
-              <legend>你接触过哪些防艾知识？</legend>
-              <div class="profile-options">
-                <button class="profile-option" type="button" data-profile-key="knowledgeLevel" data-profile-value="第一次了解">第一次了解</button>
-                <button class="profile-option" type="button" data-profile-key="knowledgeLevel" data-profile-value="看过相关科普">看过相关科普</button>
-                <button class="profile-option" type="button" data-profile-key="knowledgeLevel" data-profile-value="参加过培训">参加过培训</button>
-                <button class="profile-option" type="button" data-profile-key="knowledgeLevel" data-profile-value="不确定">不确定</button>
-              </div>
-            </fieldset>
-          </div>
-          <p class="setup-note" id="setupNote">完成五项选择后开始。你可以在身份和关系设定中选择“不设定”。</p>
-          <button class="setup-start" id="startGameButton" type="button" disabled>开始故事 <span>→</span></button>
-        </section>
-
-        <section class="chat-log" id="chatLog" aria-live="polite"></section>
-
-        <section class="interaction-dock" id="interactionDock">
-          <p class="dock-label" id="dockLabel">回复匿名求助</p>
-          <div class="choice-list" id="choiceList"></div>
-        </section>
-
-        <section class="tool-view" id="toolView" hidden></section>
-
-        <section class="ending-view" id="endingView" hidden>
-          <div class="ending-mark" aria-hidden="true"><span>72</span><i></i></div>
-          <p class="ending-label">故事完成</p>
-          <h2 id="endingTitle"></h2>
-          <p class="ending-copy" id="endingCopy"></p>
-          <div class="ending-tags" id="endingTags"></div>
-          <section class="takeaway-guide" aria-labelledby="takeawayTitle">
-            <span>通关行动清单</span>
-            <h3 id="takeawayTitle">遇到潜在暴露，先做这六步</h3>
-            <ol>
-              <li>记录发生时间、接触方式和防护情况</li>
-              <li>不依靠症状自行判断感染状态</li>
-              <li>尽快联系正规专业机构接受评估</li>
-              <li>PEP越早评估越好，最迟不超过暴露后72小时</li>
-              <li>如启动PEP，按医嘱完成用药并咨询异常情况</li>
-              <li>按专业建议完成检测和必要复查</li>
-            </ol>
-          </section>
-          <div class="final-message">
-            <span>Q · 匿名</span>
-            <p id="finalMessageText">“谢谢你们没有先问我是谁，而是先告诉我该怎么做。”</p>
-          </div>
-          <button class="primary-button" id="playAgainButton" type="button">重新开始 <span>↻</span></button>
-        </section>
-
-        <footer class="app-footer">
-          <span>互动科普不替代专业医疗建议</span>
-          <span>PEP应尽早评估 最迟不超过暴露后72小时</span>
-        </footer>
-      </section>
-    </main>
-
-    <dialog class="restart-dialog" id="restartDialog">
-      <h2>重新开始故事？</h2>
-      <p>当前选择和章节进度将被清除。</p>
-      <div>
-        <button type="button" id="cancelRestart">继续故事</button>
-        <button type="button" id="confirmRestart">重新开始</button>
+    <dialog id="restartDialog" class="dialog confirm-dialog">
+      <p class="eyebrow">重新开始</p>
+      <h2>清除当前故事进度？</h2>
+      <p>角色设置和本局选择会被清除。</p>
+      <div class="dialog-actions">
+        <button class="button ghost" data-close="restartDialog" type="button">继续故事</button>
+        <button class="button danger" id="confirmRestart" type="button">清除并重来</button>
       </div>
     </dialog>
 

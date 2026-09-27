@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">校园健康中心候诊区</title>
+  <desc id="desc">安静明亮的候诊区，有绿植、座椅、咨询窗口和隐私提示。</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#edf2eb"/><stop offset="1" stop-color="#d7e3db"/></linearGradient></defs>
+  <rect width="1440" height="900" fill="url(#bg)"/>
+  <rect x="90" y="85" width="1260" height="660" rx="12" fill="#fbfaf4" stroke="#aac0b6" stroke-width="8"/>
+  <rect x="170" y="170" width="430" height="330" fill="#d6e6e4" stroke="#6c918c" stroke-width="8"/>
+  <path d="M385 170v330M170 335h430" stroke="#6c918c" stroke-width="7"/>
+  <rect x="770" y="165" width="455" height="220" rx="8" fill="#1e4a43"/>
+  <circle cx="998" cy="275" r="58" fill="#f0ca6c"/>
+  <path d="M973 275h50M998 250v50" stroke="#1e4a43" stroke-width="14" stroke-linecap="round"/>
+  <g><path d="M230 610h245v70H230zM550 610h245v70H550zM870 610h245v70H870z" fill="#648b83"/><path d="M250 540h205q20 0 20 20v50H230v-50q0-20 20-20zM570 540h205q20 0 20 20v50H550v-50q0-20 20-20zM890 540h205q20 0 20 20v50H870v-50q0-20 20-20z" fill="#8eb0a7"/></g>
+  <g transform="translate(1210 490)"><path d="M0 170h90l-12-95H12z" fill="#c77b57"/><path d="M45 85C0 45 10 0 45 35 80-5 95 45 45 85z" fill="#3d795b"/><path d="M45 95c-55-20-68 25-20 42 25 9 20-8 20-42z" fill="#568c69"/><path d="M47 90c53-27 70 15 25 38-22 12-21-5-25-38z" fill="#568c69"/></g>
+  <rect x="0" y="745" width="1440" height="155" fill="#c9d6cf"/>
+  <path d="M0 810h1440" stroke="#a5bab0" stroke-width="4"/>
+</svg>

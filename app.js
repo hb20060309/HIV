@@ -1,959 +1,830 @@
+const STORAGE_KEY = 'women-xian-shuo-qing-chu-v1';
+
 const chapters = [
-  { number: '第一章', title: '凌晨的消息' },
-  { number: '第二章', title: '倒计时开始' },
-  { number: '第三章', title: '找到入口' },
-  { number: '第四章', title: '陪他去检测' },
-  { number: '第五章', title: '下一次可以更早' },
-  { number: '第六章', title: '发出去之前' },
+  ['序章', '创建你的视角'],
+  ['第一章', '那一晚之后'],
+  ['第二章', '到底什么会传播'],
+  ['第三章', '要不要检测'],
+  ['第四章', '他只说，想去检测'],
+  ['第五章', '下一次可以更早'],
+  ['第六章', '你会怎么说'],
 ];
 
-const state = {
-  chapter: 0,
-  hours: 70,
-  support: 50,
-  privacy: 70,
-  delay: 0,
-  judgment: 0,
-  medicationMistakes: 0,
-  informationFound: new Set(),
-  dismissedRumors: new Set(),
-  profile: {
-    identity: '',
-    orientation: '',
-    relationship: '',
-    helpStyle: '',
-    knowledgeLevel: '',
+const chapterNotes = [
+  '身份不改变医学事实',
+  '记录与及时行动',
+  '事实、日常与疑问',
+  '检测不是感染结论',
+  '陪伴与隐私边界',
+  '三阶段预防计划',
+  '把事实说给更多人',
+];
+
+const profileFields = [
+  { key: 'identity', title: '你希望如何被称呼？', options: ['女生', '男生', '非二元 / 其他', '不设定'] },
+  { key: 'orientation', title: '你的情感与亲密关系视角', options: ['异性恋', '同性恋', '双性恋 / 泛性恋', '不设定'] },
+  { key: 'relationship', title: '你目前的关系状态', options: ['单身', '恋爱中', '关系未定义', '不设定'] },
+  { key: 'helpStyle', title: '遇到健康问题时，你通常会？', options: ['先自己搜索', '先问信任的人', '直接找专业机构', '还不确定'] },
+  { key: 'knowledge', title: '你接触过哪些防艾知识？', options: ['第一次了解', '看过一些科普', '参加过培训', '不确定'] },
+];
+
+const transmissionCards = [
+  {
+    title: '没有采取有效防护的阴道性交或肛交',
+    detail: '涉及可能含有HIV的体液与黏膜或破损皮肤接触。',
+    answer: 'route',
+    fact: '这是需要认真评估的传播相关情境。一次潜在暴露不等于感染，应结合具体情况寻求专业评估。',
   },
-};
-
-const els = {
-  chapterList: document.getElementById('chapterList'),
-  chapterNumber: document.getElementById('chapterNumber'),
-  chapterTitle: document.getElementById('chapterTitle'),
-  progressBar: document.getElementById('progressBar'),
-  chatLog: document.getElementById('chatLog'),
-  interactionDock: document.getElementById('interactionDock'),
-  dockLabel: document.getElementById('dockLabel'),
-  choiceList: document.getElementById('choiceList'),
-  toolView: document.getElementById('toolView'),
-  endingView: document.getElementById('endingView'),
-  endingTitle: document.getElementById('endingTitle'),
-  endingCopy: document.getElementById('endingCopy'),
-  endingTags: document.getElementById('endingTags'),
-  finalMessageText: document.getElementById('finalMessageText'),
-  timerPill: document.getElementById('timerPill'),
-  timerText: document.getElementById('timerText'),
-  railTimer: document.getElementById('railTimer'),
-  supportMeter: document.getElementById('supportMeter'),
-  privacyMeter: document.getElementById('privacyMeter'),
-  restartDialog: document.getElementById('restartDialog'),
-  setupView: document.getElementById('setupView'),
-  setupNote: document.getElementById('setupNote'),
-  startGameButton: document.getElementById('startGameButton'),
-};
-
-const profileDraft = {
-  identity: '',
-  orientation: '',
-  relationship: '',
-  helpStyle: '',
-  knowledgeLevel: '',
-};
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function formatTime() {
-  return `${String(Math.max(0, state.hours)).padStart(2, '0')}:00:00`;
-}
-
-function updateStatus() {
-  const time = formatTime();
-  els.timerText.textContent = state.chapter >= 3 ? '已接受评估' : time;
-  els.railTimer.textContent = time;
-  els.supportMeter.style.width = `${clamp(state.support, 0, 100)}%`;
-  els.privacyMeter.style.width = `${clamp(state.privacy, 0, 100)}%`;
-  els.progressBar.style.width = `${((state.chapter + 1) / chapters.length) * 100}%`;
-  [...els.chapterList.children].forEach((item, index) => {
-    item.classList.toggle('active', index === state.chapter);
-    item.classList.toggle('done', index < state.chapter);
-  });
-}
-
-function setChapter(index) {
-  state.chapter = index;
-  els.chapterNumber.textContent = chapters[index].number;
-  els.chapterTitle.textContent = chapters[index].title;
-  els.chatLog.innerHTML = '';
-  els.toolView.hidden = true;
-  els.interactionDock.hidden = false;
-  els.endingView.hidden = true;
-  els.timerPill.classList.toggle('stopped', index >= 3);
-  if (index >= 3) els.timerText.textContent = '已接受评估';
-  updateStatus();
-}
-
-function timeDivider(text) {
-  const div = document.createElement('div');
-  div.className = 'time-divider';
-  div.textContent = text;
-  els.chatLog.appendChild(div);
-}
-
-function addMessage(sender, text, options = {}) {
-  const message = document.createElement('article');
-  const type = options.self ? 'self' : options.type || 'q';
-  message.className = `message ${type}${options.note ? ' note' : ''}`;
-  const visibleSender = options.self ? '你' : sender;
-  const initial = visibleSender === 'Q' ? '?' : visibleSender === '互助提示' ? 'i' : visibleSender.slice(0, 1);
-  message.innerHTML = options.self
-    ? `<div class="bubble-wrap"><span class="sender">${visibleSender}</span><div class="bubble">${text}</div><span class="message-time">刚刚</span></div><div class="message-avatar">${initial}</div>`
-    : `<div class="message-avatar">${initial}</div><div class="bubble-wrap"><span class="sender">${visibleSender}</span><div class="bubble">${text}</div><span class="message-time">刚刚</span></div>`;
-  els.chatLog.appendChild(message);
-  els.chatLog.scrollTop = els.chatLog.scrollHeight;
-}
-
-function clearChoices(label) {
-  els.dockLabel.textContent = label;
-  els.choiceList.innerHTML = '';
-  els.interactionDock.hidden = false;
-  els.toolView.hidden = true;
-}
-
-function choice(label, description, handler) {
-  const button = document.createElement('button');
-  button.className = 'choice-button';
-  button.type = 'button';
-  button.innerHTML = `${label}${description ? `<small>${description}</small>` : ''}`;
-  button.addEventListener('click', () => {
-    els.choiceList.querySelectorAll('button').forEach((item) => { item.disabled = true; });
-    handler();
-  });
-  els.choiceList.appendChild(button);
-}
-
-function continueButton(label, handler) {
-  clearChoices('继续');
-  choice(label, '', handler);
-}
-
-function spendTime(hours) {
-  state.hours = Math.max(0, state.hours - hours);
-  state.delay += hours;
-  updateStatus();
-}
-
-function updateProfileSetup() {
-  const keys = Object.keys(profileDraft);
-  const selectedCount = keys.filter((key) => profileDraft[key]).length;
-  document.querySelectorAll('.profile-option').forEach((button) => {
-    button.classList.toggle('selected', profileDraft[button.dataset.profileKey] === button.dataset.profileValue);
-  });
-  els.startGameButton.disabled = selectedCount !== keys.length;
-  els.setupNote.textContent = selectedCount === keys.length
-    ? '设定完成。它们只会影响你的叙事视角，不会改变医学事实。'
-    : `完成五项选择后开始，还差 ${keys.length - selectedCount} 项。身份和关系设定可以选择“不设定”。`;
-}
-
-function showProfileSetup() {
-  setChapter(0);
-  els.setupView.hidden = false;
-  els.chatLog.hidden = true;
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = true;
-  els.endingView.hidden = true;
-  els.timerPill.classList.remove('stopped');
-  els.timerText.textContent = formatTime();
-  Object.keys(profileDraft).forEach((key) => { profileDraft[key] = ''; });
-  updateProfileSetup();
-}
-
-function startWithProfile() {
-  state.profile = { ...profileDraft };
-  beginGame();
-}
-
-function beginGame() {
-  setChapter(0);
-  els.setupView.hidden = true;
-  els.chatLog.hidden = false;
-  const styleHint = {
-    '先自己查资料': '你平时习惯先自己搜索，这次要特别留意：搜索结果不能替代专业评估。',
-    '先问信任的人': '你平时习惯先找信任的人，这次也可以把关键时间和情况交给专业机构判断。',
-    '直接找专业机构': '你平时更愿意直接寻求专业帮助，这次仍然要先记录时间、接触方式和防护情况。',
-    '还不确定': '你还不确定该从哪里开始，故事会把每一步行动拆开。',
-  }[state.profile.helpStyle];
-  const knowledgeHint = {
-    '第一次了解': '接下来会从基础概念开始，不需要预习。',
-    '看过相关科普': '遇到不确定的地方，仍然以专业机构和游戏中的核对信息为准。',
-    '参加过培训': '你可以把已有知识带入选择，但具体医疗判断仍交给专业人员。',
-    '不确定': '遇到不熟悉的概念时，可以通过情境反馈逐步理解。',
-  }[state.profile.knowledgeLevel];
-  addMessage('互助提示', `本局视角：${state.profile.identity}、${state.profile.orientation}、${state.profile.relationship}。这些设定只影响叙事语境，不代表任何风险判断。${styleHint}${knowledgeHint}`, { type: 'system', note: true });
-  timeDivider('凌晨 02:13 · 今晚最后一条匿名消息');
-  addMessage('Q', '你好。刚才安全套好像破了，我不知道这算不算暴露。');
-  addMessage('Q', '我很害怕，也不知道该找谁。请不要问我是谁。');
-  clearChoices('选择你的第一句回复');
-  choice('先别急，我们只整理评估需要的信息', '不追问身份，也不替专业人员下结论', () => {
-    state.support += 12;
-    addMessage('小安', '不用告诉我们你是谁。我们先把专业评估需要的信息整理出来。', { self: true });
-    addMessage('Q', '好。事情发生在两个小时前，对方的HIV感染状态我不清楚。');
-    continueButton('整理就诊信息', showInformationPuzzle);
-  });
-  choice('对方是谁？你们是什么关系？', '先追问身份和私生活', () => {
-    state.support -= 18;
-    state.privacy -= 15;
-    state.judgment += 1;
-    addMessage('小安', '对方是谁？你们是什么关系？', { self: true });
-    addMessage('Q', '这和我现在该怎么办有关系吗？我不太想说。');
-    addMessage('林澈', '身份不是我们判断风险的依据。先问时间、接触方式和防护情况。', { self: true });
-    continueButton('换一种问法', showInformationPuzzle);
-  });
-  choice('你确定对方有HIV吗？', '让求助者先证明风险存在', () => {
-    state.support -= 10;
-    state.judgment += 1;
-    addMessage('小安', '你确定对方有HIV吗？', { self: true });
-    addMessage('Q', '不知道。就是因为不知道，我才很害怕。');
-    addMessage('林澈', '感染状态不明不能靠猜。我们先弄清暴露时间和方式。', { self: true });
-    continueButton('回到有效信息', showInformationPuzzle);
-  });
-}
-
-const informationCards = [
-  { id: 'time', label: '发生时间', value: '约2小时前', needed: true, why: 'PEP有明确的时间窗口，专业人员需要知道距离暴露过去了多久。' },
-  { id: 'contact', label: '接触方式', value: '发生了可能接触体液的性接触', needed: true, why: '不同接触方式的传播风险不同，需要据此进行专业评估。' },
-  { id: 'protection', label: '防护情况', value: '使用了安全套，中途发现破损', needed: true, why: '是否正确、全程使用防护，以及是否出现破损，都会影响评估。' },
-  { id: 'status', label: '对方感染状态', value: '目前不清楚', needed: true, why: '“不清楚”不等于已经感染，也不能据此排除风险，应如实告诉专业人员。' },
-  { id: 'name', label: '真实姓名和学号', needed: false, why: '学生志愿者没有必要收集能识别Q身份的信息。' },
-  { id: 'relationship', label: '两个人是什么关系', needed: false, why: '恋爱、婚姻或陌生关系不能代替对具体接触行为的风险评估。' },
-  { id: 'history', label: '完整的私人生活经历', needed: false, why: '只收集当前专业评估所需的信息，避免无关追问和道德判断。' },
+  {
+    title: '共用注射器或针具',
+    detail: '针具可能残留血液。',
+    answer: 'route',
+    fact: '共用受污染的注射器具可能造成血液传播，不应共用针具。',
+  },
+  {
+    title: '一起吃饭、共用餐具',
+    detail: '普通校园聚餐，没有血液暴露。',
+    answer: 'daily',
+    fact: 'HIV不会通过共同进餐或共用餐具传播，没有必要疏远任何人。',
+  },
+  {
+    title: '拥抱、握手或共用教室',
+    detail: '普通的学习和生活接触。',
+    answer: 'daily',
+    fact: '这些日常接触不会传播HIV。回避和隔离只会制造污名。',
+  },
+  {
+    title: '被蚊虫叮咬',
+    detail: '担心蚊虫从别人那里“带来”病毒。',
+    answer: 'daily',
+    fact: '蚊虫叮咬不会传播HIV。病毒不能在蚊虫体内复制，叮咬也不会把前一个人的血注入下一个人。',
+  },
+  {
+    title: '普通接吻',
+    detail: '双方口腔没有明显出血或开放伤口。',
+    answer: 'daily',
+    fact: '唾液不构成HIV传播所需的体液条件，普通接吻不会传播HIV。',
+  },
+  {
+    title: '接触到他人血液，手上恰好有开放伤口',
+    detail: '是否直接接触、接触量和时间都不清楚。',
+    answer: 'consult',
+    fact: '这种描述需要补充具体信息，不能只凭一句话判断。应尽快联系专业机构评估。',
+  },
 ];
 
-function showInformationPuzzle() {
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = false;
-  state.informationFound = new Set();
-  els.toolView.innerHTML = `
-    <div class="tool-head"><div><p>就诊信息拼图</p><h3>帮Q整理四项必要信息</h3></div><span class="tool-count" id="infoCount">0 / 4</span></div>
-    <p class="tool-copy">点击需要带去专业评估的信息。选到无关隐私时，会告诉你为什么不必追问。</p>
-    <div class="info-slots" id="infoSlots">
-      <span>发生时间</span><span>接触方式</span><span>防护情况</span><span>对方状态</span>
-    </div>
-    <div class="info-card-grid" id="infoCards"></div>
-    <div class="feedback" id="infoFeedback">先从最能帮助专业人员判断下一步的信息开始。</div>
-    <div class="tap-fallback"><button type="button" id="finishInfo" disabled>带着信息开始行动 →</button></div>`;
-
-  const slots = [...document.querySelectorAll('#infoSlots span')];
-  const grid = document.getElementById('infoCards');
-  const feedback = document.getElementById('infoFeedback');
-  informationCards.forEach((item) => {
-    const button = document.createElement('button');
-    button.className = 'info-card';
-    button.type = 'button';
-    button.innerHTML = `<b>${item.label}</b>${item.value ? `<small>${item.value}</small>` : '<small>是否需要追问？</small>'}`;
-    button.addEventListener('click', () => {
-      if (item.needed) {
-        if (state.informationFound.has(item.id)) return;
-        const slotIndex = informationCards.filter((card) => card.needed).findIndex((card) => card.id === item.id);
-        state.informationFound.add(item.id);
-        button.classList.add('selected');
-        button.disabled = true;
-        slots[slotIndex].classList.add('filled');
-        slots[slotIndex].innerHTML = `<b>${item.label}</b><small>${item.value}</small>`;
-        feedback.className = 'feedback positive';
-        feedback.innerHTML = `<strong>为什么要问：</strong>${item.why}`;
-        document.getElementById('infoCount').textContent = `${state.informationFound.size} / 4`;
-        if (state.informationFound.size === 4) document.getElementById('finishInfo').disabled = false;
-      } else {
-        state.privacy -= 3;
-        updateStatus();
-        button.classList.add('unneeded');
-        feedback.className = 'feedback negative';
-        feedback.innerHTML = `<strong>不必收集：</strong>${item.why}`;
-      }
-    });
-    grid.appendChild(button);
-  });
-
-  document.getElementById('finishInfo').addEventListener('click', () => {
-    state.support += 8;
-    addMessage('互助提示', '<strong>信息已经够用了。</strong> 是否需要PEP仍应由专业人员结合具体情况评估，学生志愿者不能仅凭聊天下结论。', { type: 'system', note: true });
-    continueButton('进入第二章', beginChapterTwo);
-  });
-}
-
-function beginChapterTwo() {
-  setChapter(1);
-  timeDivider(`距离暴露后72小时还有 ${formatTime()}`);
-  addMessage('Q', '我现在没有任何感觉。是不是说明没事？');
-  addMessage('Q', '网上有人说可以等几天看有没有发热。');
-  clearChoices('你准备如何回应');
-  choice('不要等症状，尽快联系专业机构评估', 'PEP越早评估越好，最迟不超过暴露后72小时', () => {
-    state.support += 12;
-    addMessage('小安', '不能靠症状判断。现在先联系能提供专业评估的机构，不要等。', { self: true });
-    addMessage('互助提示', '<strong>72小时不是等待时间。</strong> 潜在高风险暴露不等于已经感染，是否需要PEP由专业人员评估。', { type: 'system', note: true });
-    continueButton('先清理搜索误区', showSearchRumors);
-  });
-  choice('先搜“感染早期症状”，看完再决定', '搜索无法代替专业评估', () => {
-    spendTime(7);
-    state.support -= 8;
-    addMessage('小安', '我先帮你查查会不会发热、出疹子。', { self: true });
-    timeDivider(`7小时后 · 剩余 ${formatTime()}`);
-    addMessage('Q', '结果越看越害怕，可我还是不知道该怎么办。');
-    continueButton('停止搜索，辨别这些说法', showSearchRumors);
-  });
-  choice('先睡一觉，明天观察身体变化', '等待会缩短行动窗口', () => {
-    spendTime(10);
-    state.support -= 10;
-    addMessage('小安', '你先休息，明天看看有没有不舒服。', { self: true });
-    timeDivider(`10小时后 · 剩余 ${formatTime()}`);
-    addMessage('Q', '我根本睡不着。我们是不是已经浪费了很多时间？');
-    continueButton('现在开始行动', showSearchRumors);
-  });
-}
-
-const searchRumors = [
-  { title: '“出现发热，才说明可能感染”', fact: 'HIV感染不能根据某一种症状判断；其他疾病也可能出现相似症状。' },
-  { title: '“现在没有症状，应该就没事”', fact: '没有症状不能排除感染，感染状态需要通过检测了解。' },
-  { title: '“72小时内先观察身体变化”', fact: '72小时是尽快接受PEP专业评估的最迟窗口，不是等待症状的时间。' },
+const planItems = [
+  { id: 'condom', phase: 'before', title: '正确、全程使用安全套', note: '暴露前' },
+  { id: 'prep', phase: 'before', title: '咨询PrEP是否适合自己', note: '暴露前' },
+  { id: 'talk', phase: 'before', title: '沟通防护与检测边界', note: '暴露前' },
+  { id: 'record', phase: 'after', title: '记录时间与具体情况', note: '潜在暴露后' },
+  { id: 'assess', phase: 'after', title: '尽快接受PEP专业评估', note: '潜在暴露后' },
+  { id: 'test', phase: 'confirm', title: '按建议检测和复查', note: '确认感染状态' },
+  { id: 'symptom', phase: 'confirm', title: '不依靠症状自行判断', note: '确认感染状态' },
 ];
 
-function showSearchRumors() {
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = false;
-  state.dismissedRumors = new Set();
-  els.toolView.innerHTML = `
-    <div class="tool-head"><div><p>搜索结果整理</p><h3>把误导行动的说法划掉</h3></div><span class="tool-count" id="rumorCount">0 / 3</span></div>
-    <p class="tool-copy">Q把三条搜索结果发了过来。逐条点击，看看它们为什么不能指导行动。</p>
-    <div class="rumor-list" id="rumorList"></div>
-    <div class="feedback" id="rumorFeedback">症状既不能确认感染，也不能排除感染。</div>
-    <div class="tap-fallback"><button type="button" id="finishRumors" disabled>整理72小时行动顺序 →</button></div>`;
-  const list = document.getElementById('rumorList');
-  searchRumors.forEach((item, index) => {
-    const button = document.createElement('button');
-    button.className = 'rumor-card';
-    button.type = 'button';
-    button.innerHTML = `<span>搜索结果 ${index + 1}</span><b>${item.title}</b><small>点击核对</small>`;
-    button.addEventListener('click', () => {
-      if (state.dismissedRumors.has(index)) return;
-      state.dismissedRumors.add(index);
-      button.classList.add('dismissed');
-      button.innerHTML = `<span>不能据此判断</span><b>${item.title}</b><small>${item.fact}</small>`;
-      document.getElementById('rumorFeedback').innerHTML = `<strong>核对结果：</strong>${item.fact}`;
-      document.getElementById('rumorCount').textContent = `${state.dismissedRumors.size} / 3`;
-      if (state.dismissedRumors.size === searchRumors.length) document.getElementById('finishRumors').disabled = false;
-    });
-    list.appendChild(button);
-  });
-  document.getElementById('finishRumors').addEventListener('click', showActionSequence);
-}
-
-const actionSteps = [
-  { card: '停止反复搜索症状', result: '潜在暴露不等于已经感染，也不能靠短期症状判断。' },
-  { card: '记录暴露时间与情况', result: '准确记录时间、接触方式和防护情况，便于专业人员评估。' },
-  { card: '尽快联系专业机构', result: '由专业人员判断是否符合PEP使用条件，而不是自行开药。' },
+const socialPosts = [
+  {
+    post: '“去做HIV检测的人，是不是生活都很乱？”',
+    options: [
+      { text: '检测是健康管理，不能用来评价一个人的生活或品格。', good: true, reply: '检测用于了解健康状态。愿意检测是一种负责任的健康行动，不是道德标签。' },
+      { text: '也不能这么说，但确实容易让人多想。', reply: '这句话看似中立，却仍把检测和“可疑”绑定，会让真正需要帮助的人更难开口。' },
+      { text: '别讨论了，离这样的人远一点就行。', reply: '回避并不能预防HIV，反而会加深污名和错误恐惧。' },
+    ],
+  },
+  {
+    post: '“和HIV感染者一起吃饭，会不会被传染？”',
+    options: [
+      { text: '不会。共同进餐、拥抱和握手都不会传播HIV。', good: true, reply: 'HIV不通过共同进餐等日常接触传播，没有理由隔离感染者。' },
+      { text: '最好还是分餐具，更保险。', reply: '分餐具并不能带来额外保护，只会把感染者推向不必要的隔离。' },
+      { text: '只要看起来健康就没事。', reply: '外表不能判断感染状态，也不能判断是否具有传播风险。' },
+    ],
+  },
+  {
+    post: '“吃PEP，是不是说明已经感染HIV了？”',
+    options: [
+      { text: '不是。PEP是潜在暴露后的预防措施，不代表已经感染。', good: true, reply: '是否需要PEP由专业人员评估；启动PEP并不是感染结论。' },
+      { text: '一般是，不然为什么要吃药？', reply: '这混淆了预防和治疗，可能让需要PEP的人因为害怕标签而错过行动窗口。' },
+      { text: '吃完没症状就说明没感染。', reply: '症状不能用来判断感染状态，后续仍需按专业建议检测和复查。' },
+    ],
+  },
+  {
+    post: '“感染HIV以后，是不是就不能正常恋爱和生活了？”',
+    options: [
+      { text: '不是。规范治疗和随访可以支持长期健康生活，U=U也有充分科学证据。', good: true, reply: '规范治疗并持续达到病毒载量检测不到时，不会通过性行为传播HIV，即U=U。' },
+      { text: '最好不要恋爱，免得影响别人。', reply: '这把感染者简单排除在亲密关系之外，忽略了治疗、知情沟通与U=U的科学事实。' },
+      { text: '这个问题太敏感，不能公开讨论。', reply: '不讨论不会消除误解。准确、尊重地说明事实，能减少恐惧和歧视。' },
+    ],
+  },
 ];
 
-function showActionSequence() {
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = false;
-  let step = 0;
+function freshState() {
+  return {
+    started: false,
+    chapter: 0,
+    view: 'cover',
+    hours: 70,
+    trust: 72,
+    privacy: 82,
+    action: 20,
+    delay: 0,
+    judgment: 0,
+    medicationMistakes: 0,
+    sharedStory: false,
+    professionalHelp: false,
+    profile: {},
+    found: [],
+    sortIndex: 0,
+    sorted: [],
+    planAdded: [],
+    planSelected: '',
+    socialIndex: 0,
+    history: [],
+  };
+}
 
-  function renderStep() {
-    const item = actionSteps[step];
-    els.toolView.innerHTML = `
-      <div class="tool-head"><div><p>72小时行动链</p><h3>把下一步拖进行动区</h3></div><span class="tool-count">${step + 1} / ${actionSteps.length}</span></div>
-      <p class="tool-copy">在手机上也可以直接点击行动卡完成这一步。</p>
-      <div class="action-board">
-        <div class="drop-zone" id="dropZone"><strong>行动区</strong><span>拖到这里</span></div>
-        <div class="drag-card" id="dragCard" role="button" tabindex="0">${item.card}</div>
+let state = loadState();
+const app = document.getElementById('app');
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    return saved ? { ...freshState(), ...saved } : freshState();
+  } catch {
+    return freshState();
+  }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function clamp(value, min = 0, max = 100) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function adjust(changes = {}) {
+  Object.entries(changes).forEach(([key, value]) => {
+    state[key] = typeof state[key] === 'number' ? state[key] + value : value;
+  });
+  state.hours = clamp(state.hours, 0, 70);
+  state.trust = clamp(state.trust);
+  state.privacy = clamp(state.privacy);
+  state.action = clamp(state.action);
+  saveState();
+}
+
+function setView(view, chapter = state.chapter) {
+  state.view = view;
+  state.chapter = chapter;
+  saveState();
+}
+
+function shell(content, options = {}) {
+  const active = options.chapter ?? state.chapter;
+  const progress = options.progress ?? Math.max(3, (active / 6) * 100);
+  app.innerHTML = `
+    <div class="game-layout">
+      <aside class="rail">
+        <div class="brand"><span class="brand-mark">先</span><div><p>校园健康互动叙事</p><h1>我们先说清楚</h1></div></div>
+        <ol class="chapter-list">
+          ${chapters.map((chapter, index) => `
+            <li class="${index === active ? 'active' : ''} ${index < active ? 'done' : ''}">
+              <span>${String(index).padStart(2, '0')}</span>
+              <div><b>${chapter[1]}</b><small>${chapterNotes[index]}</small></div>
+            </li>`).join('')}
+        </ol>
+        <section class="rail-status">
+          <div class="status-line"><span>行动时间</span><strong>${state.professionalHelp ? '已接受评估' : `${state.hours}小时`}</strong></div>
+          <div class="status-line"><span>信任</span><div class="meter"><i style="width:${state.trust}%"></i></div></div>
+          <div class="status-line privacy"><span>隐私</span><div class="meter"><i style="width:${state.privacy}%"></i></div></div>
+          <p class="rail-note">这些状态只记录故事后果，不用于评价你。</p>
+        </section>
+      </aside>
+      <section class="main-panel">
+        <header class="topbar">
+          <div class="chapter-heading"><span>${chapters[active][0]}</span><h2>${chapters[active][1]}</h2></div>
+          <div class="top-actions">
+            <button class="icon-button" data-facts type="button" title="随身事实卡" aria-label="随身事实卡">i</button>
+            <button class="icon-button" data-restart type="button" title="重新开始" aria-label="重新开始">↻</button>
+          </div>
+        </header>
+        <div class="progress"><i style="width:${clamp(progress)}%"></i></div>
+        <section class="stage">${content}</section>
+        <footer class="game-footer"><span>互动科普不能替代个体化医疗建议</span><button class="text-button" data-facts type="button">查看随身事实卡</button></footer>
+      </section>
+    </div>`;
+  bindChrome();
+}
+
+function bindChrome() {
+  document.querySelectorAll('[data-facts]').forEach((button) => button.addEventListener('click', () => document.getElementById('factDialog').showModal()));
+  document.querySelectorAll('[data-restart]').forEach((button) => button.addEventListener('click', () => document.getElementById('restartDialog').showModal()));
+}
+
+function toast(message) {
+  document.querySelector('.toast')?.remove();
+  const node = document.createElement('div');
+  node.className = 'toast';
+  node.textContent = message;
+  document.body.appendChild(node);
+  window.setTimeout(() => node.remove(), 3600);
+}
+
+function buttonChoice(option, index) {
+  return `<button class="choice" type="button" data-choice="${index}"><b>${option.text}</b>${option.note ? `<small>${option.note}</small>` : ''}</button>`;
+}
+
+function renderCover() {
+  shell(`
+    <section class="cover">
+      <div class="cover-content">
+        <p class="cover-kicker">FIRST-PERSON INTERACTIVE STORY</p>
+        <h2>我们先说清楚</h2>
+        <p class="cover-lead">一个关于疑问、行动和陪伴的校园故事。你不需要证明自己是谁，也不用先知道所有答案。</p>
+        <div class="cover-meta"><span>约 20 分钟</span><span>六个章节</span><span>进度保存在本机</span></div>
+        <button class="button light" id="enterStory" type="button">${state.started ? '继续故事' : '进入故事'} →</button>
       </div>
-      <div class="tap-fallback"><button type="button" id="tapComplete">执行这一步 →</button></div>
-      <div class="feedback" id="stepFeedback" hidden></div>`;
-    wireDrag(() => {
-      document.getElementById('stepFeedback').hidden = false;
-      document.getElementById('stepFeedback').textContent = item.result;
-      document.getElementById('dragCard').style.opacity = '.25';
-      const control = document.getElementById('tapComplete');
-      control.textContent = step === actionSteps.length - 1 ? '进入下一章 →' : '下一步 →';
-      control.onclick = () => {
-        if (step === actionSteps.length - 1) beginChapterThree();
-        else { step += 1; renderStep(); }
-      };
-    });
-  }
-  renderStep();
-}
-
-function wireDrag(onComplete) {
-  const card = document.getElementById('dragCard');
-  const zone = document.getElementById('dropZone');
-  const tap = document.getElementById('tapComplete');
-  let drag = null;
-  let completed = false;
-
-  function complete() {
-    if (completed) return;
-    completed = true;
-    zone.classList.add('over');
-    onComplete();
-  }
-
-  card.addEventListener('pointerdown', (event) => {
-    event.preventDefault();
-    drag = { x: event.clientX, y: event.clientY, left: card.offsetLeft, top: card.offsetTop };
-    card.setPointerCapture(event.pointerId);
-    card.classList.add('selected');
-  });
-  card.addEventListener('pointermove', (event) => {
-    if (!drag) return;
-    card.style.left = `${drag.left + event.clientX - drag.x}px`;
-    card.style.top = `${drag.top + event.clientY - drag.y}px`;
-    const a = card.getBoundingClientRect();
-    const b = zone.getBoundingClientRect();
-    zone.classList.toggle('over', a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top);
-  });
-  card.addEventListener('pointerup', () => {
-    if (!drag) return;
-    const a = card.getBoundingClientRect();
-    const b = zone.getBoundingClientRect();
-    drag = null;
-    card.classList.remove('selected');
-    if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) complete();
-    else { card.style.left = ''; card.style.top = ''; zone.classList.remove('over'); }
-  });
-  card.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') complete();
-  });
-  tap.addEventListener('click', complete);
-}
-
-function beginChapterThree() {
-  setChapter(2);
-  timeDivider('行动路线 · 选择服务入口');
-  addMessage('Q', '我愿意去评估，但我不知道应该去哪里。网上有人卖“阻断套餐”。');
-  addMessage('林澈', '我们只能提供就医导航，不能替专业人员判断，也不能推荐来路不明的药。', { self: true });
-  clearChoices('帮助Q选择下一步');
-  choice('联系当地疾控、医院或其他正规专业机构', '说明暴露时间、方式和防护情况', () => {
-    state.support += 12;
-    addMessage('小安', '先联系正规专业机构，如实说明时间和情况，请专业人员评估。', { self: true });
-    addMessage('Q', '联系上了。他们让我尽快过去。');
-    showAssessmentResult();
-  });
-  choice('在普通网店购买“快速阻断套餐”', '来源、适用性和用法都无法保证', () => {
-    state.medicationMistakes += 1;
-    state.support -= 10;
-    spendTime(2);
-    addMessage('小安', '要不先在网上买一套药？', { self: true });
-    addMessage('Q', '我差点已经下单了。两个小时又过去了，可我还是没有得到专业评估。');
-    addMessage('互助提示', '<strong>后果：</strong>来路不明的药物信息延误了行动。是否需要PEP、使用什么方案都应由专业人员评估。', { type: 'system', note: true });
-    continueButton('改为联系专业机构', showAssessmentResult);
-  });
-  choice('等待网友回复后再决定', '网友经验不能替代专业评估', () => {
-    spendTime(5);
-    state.support -= 6;
-    addMessage('小安', '我们先发帖问问有没有相似经历。', { self: true });
-    timeDivider(`又过去5小时 · 剩余 ${formatTime()}`);
-    addMessage('Q', '每个人说的都不一样。我还是联系专业机构吧。');
-    continueButton('接受专业评估', showAssessmentResult);
-  });
-}
-
-function showAssessmentResult() {
-  els.timerPill.classList.add('stopped');
-  els.timerText.textContent = '已接受评估';
-  addMessage('Q', '我已经到专业机构了，但有点紧张。接下来会发生什么？');
-  continueButton('陪Q了解评估过程', showAssessmentJourney);
-}
-
-const assessmentSteps = [
-  { title: '说明暴露情况', copy: '向专业人员说明发生时间、接触方式、防护情况和已知的对方感染状态。无需先证明自己“属于哪类人”。' },
-  { title: '接受必要评估', copy: '专业人员会结合具体情况进行风险评估，并安排必要的基础检测或健康状况评估；具体项目因个人情况而异。' },
-  { title: '作出专业判断', copy: '不是每一次担忧都需要PEP。是否建议启动、采用什么方案，应由专业人员判断。' },
-  { title: '确认后续安排', copy: '如果启动PEP，要听清服药方法、可能的不适、咨询方式，以及后续检测和复查安排。' },
-];
-
-function showAssessmentJourney() {
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = false;
-  let revealed = 0;
-  els.toolView.innerHTML = `
-    <div class="tool-head"><div><p>到达专业机构</p><h3>一次评估通常会经历什么</h3></div><span class="tool-count" id="assessmentCount">0 / 4</span></div>
-    <p class="tool-copy">按顺序打开四个步骤。实际流程和检查项目以专业机构安排为准。</p>
-    <div class="assessment-path" id="assessmentPath"></div>
-    <div class="tap-fallback"><button type="button" id="finishAssessment" disabled>查看评估结果 →</button></div>`;
-  const path = document.getElementById('assessmentPath');
-  assessmentSteps.forEach((item, index) => {
-    const button = document.createElement('button');
-    button.className = 'assessment-step';
-    button.type = 'button';
-    button.disabled = index !== 0;
-    button.innerHTML = `<i>${index + 1}</i><span><b>${item.title}</b><small>${index === 0 ? '点击了解' : '完成上一步后解锁'}</small></span>`;
-    button.addEventListener('click', () => {
-      if (button.classList.contains('revealed')) return;
-      button.classList.add('revealed');
-      button.innerHTML = `<i>✓</i><span><b>${item.title}</b><small>${item.copy}</small></span>`;
-      revealed += 1;
-      document.getElementById('assessmentCount').textContent = `${revealed} / 4`;
-      const next = path.children[index + 1];
-      if (next) {
-        next.disabled = false;
-        next.querySelector('small').textContent = '点击了解';
-      }
-      if (revealed === assessmentSteps.length) document.getElementById('finishAssessment').disabled = false;
-    });
-    path.appendChild(button);
-  });
-  document.getElementById('finishAssessment').addEventListener('click', () => {
-    els.toolView.hidden = true;
-    addMessage('互助提示', '经专业评估，医务人员建议Q启动PEP。PEP是潜在暴露后的预防措施，不代表已经感染；应越早开始越好，最迟不超过暴露后72小时。', { type: 'system', note: true });
-    addMessage('Q', '我已经按照医嘱开始了。接下来是不是拿到药就结束了？');
-    continueButton('查看PEP后续计划', () => showMedicationCalendar(0, beginChapterFour));
-  });
-}
-
-const medicationScenarios = [
-  {
-    day: '第1天',
-    q: '我应该怎么避免忘记？',
-    choices: [
-      { label: '设置固定提醒，并按医嘱服用', correct: true },
-      { label: '想起来再吃就可以', consequence: 'Q没有建立固定提醒，第二天差点漏服，服药计划变得不稳定。' },
-      { label: '一次多吃一点，之后就不怕漏', consequence: 'Q准备自行加量。错误加量可能带来用药风险，需要停止并咨询专业人员。' },
-    ],
-    correct: '建立固定提醒有助于按医嘱完成疗程。',
-  },
-  {
-    day: '第9天',
-    q: '今天有些不舒服，我能自己换药吗？',
-    choices: [
-      { label: '及时联系专业人员，不自行换药或停药', correct: true },
-      { label: '先停几天看看', consequence: 'Q自行暂停了一次用药，疗程连续性受到影响，需要尽快向专业人员说明。' },
-      { label: '换成网上推荐的方案', consequence: 'Q差点用来源不明的方案替换医嘱，用药安全和疗程连续性受到影响。' },
-    ],
-    correct: '出现不适应及时咨询专业人员，不自行调整方案。',
-  },
-  {
-    day: '第17天',
-    q: '我好像漏服了。是不是下一次加倍？',
-    choices: [
-      { label: '尽快咨询专业人员，按其建议处理', correct: true },
-      { label: '自行加倍补回来', consequence: 'Q准备自行加倍。漏服不能靠擅自加量处理，需要尽快咨询专业人员。' },
-      { label: '既然漏了就直接停药', consequence: 'Q想放弃余下疗程，规范完成PEP的计划被中断。' },
-    ],
-    correct: '漏服后的处理应咨询专业人员，不自行加量。',
-  },
-  {
-    day: '第28天',
-    q: '药吃完了，也没有症状，是不是不用检测了？',
-    choices: [
-      { label: '按专业建议完成检测和必要复查', correct: true },
-      { label: '没有症状就不用检测', consequence: 'Q把“没有症状”当成结果，感染状态仍无法确认，后续检测计划被中断。' },
-      { label: '自己买试纸一次就结束', consequence: 'Q把一次自行检测当成全部随访，可能遗漏专业建议的检测节点。' },
-    ],
-    correct: '不能依靠症状判断，应按专业建议完成检测和复查。',
-  },
-];
-
-function showMedicationCalendar(index, onComplete = beginChapterFive) {
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = false;
-  const item = medicationScenarios[index];
-  els.toolView.innerHTML = `
-    <div class="tool-head"><div><p>28天行动日历</p><h3>${item.day}</h3></div><span class="tool-count">${index + 1} / 4</span></div>
-    <div class="day-strip"><span class="${index === 0 ? 'active' : ''}">第1天</span><span class="${index === 1 ? 'active' : ''}">第9天</span><span class="${index === 2 ? 'active' : ''}">第17天</span><span class="${index === 3 ? 'active' : ''}">第28天</span></div>
-    <p class="tool-copy">Q：${item.q}</p>
-    <div class="scenario-grid" id="medChoices"></div>`;
-  const container = document.getElementById('medChoices');
-  item.choices.forEach((option) => {
-    const button = document.createElement('button');
-    button.className = 'scenario-card';
-    button.type = 'button';
-    button.innerHTML = `<b>${option.label}</b><small>选择这条回复</small>`;
-    button.addEventListener('click', () => {
-      if (!option.correct) {
-        state.medicationMistakes += 1;
-        state.support -= 7;
-      } else {
-        state.support += 3;
-      }
-      updateStatus();
-      const feedback = document.createElement('div');
-      feedback.className = `feedback ${option.correct ? 'positive' : 'negative'}`;
-      feedback.innerHTML = option.correct
-        ? `<strong>行动结果：</strong>${item.correct}`
-        : `<strong>选择后果：</strong>${option.consequence}<br>${item.correct}`;
-      els.toolView.appendChild(feedback);
-      const next = document.createElement('div');
-      next.className = 'tap-fallback';
-      const nextButton = document.createElement('button');
-      nextButton.textContent = index === medicationScenarios.length - 1 ? '继续故事 →' : '继续记录 →';
-      nextButton.addEventListener('click', () => {
-        if (index === medicationScenarios.length - 1) onComplete();
-        else showMedicationCalendar(index + 1, onComplete);
-      });
-      next.appendChild(nextButton);
-      els.toolView.appendChild(next);
-      container.querySelectorAll('button').forEach((itemButton) => { itemButton.disabled = true; });
-    });
-    container.appendChild(button);
-  });
-}
-
-function beginChapterFour() {
-  setChapter(3);
-  timeDivider('一周后 · 校园健康中心');
-  addMessage('同学', '这周能陪我去一趟检测吗？没什么大事，我只是想确认一下。');
-  addMessage('同学', '我不太想解释原因，也不想让别人知道。');
-  addMessage('小安', '你不用现在解释。你想去的时候，我可以陪你，也可以帮你找正规机构。', { self: true });
-  addMessage('互助提示', '这里没有任何人的检测结果。陪伴的重点是支持对方求助，而不是猜测结果。', { type: 'system', note: true });
-  showTestingSupport(0);
-}
-
-const testingSupportScenes = [
-  {
-    title: '朋友不想解释原因，你会怎么回应？',
-    copy: '是否发生过什么、是否感染，都属于对方的隐私。先回应陪伴和实际需要。',
-    choices: [
-      { label: '“好，我陪你去。你不用现在解释。”', correct: true, result: '对方愿意继续安排检测，信任感保持下来。' },
-      { label: '“是不是发生了什么高风险的事？”', result: '对方开始担心自己必须先交代经历，差点放弃求助。' },
-      { label: '“你是不是感染HIV了？”', result: '追问直接把检测等同于感染，对方感到被暴露和评判。' },
-    ],
-  },
-  {
-    title: '陪同检测时，哪些信息应该记住？',
-    copy: '检测用于了解感染状态，不是对一个人的生活作评价。具体项目和时间以专业机构安排为准。',
-    choices: [
-      { label: '检测是确认状态的方式，不能靠症状代替', correct: true, result: '朋友知道了为什么要检测，也没有被迫公开私人经历。' },
-      { label: '没症状就不用检测', result: '朋友把没有症状当成结果，可能错过了解状态的机会。' },
-      { label: '检测结果应该马上告诉陪同的人', result: '陪同不等于有权接收结果，检测隐私边界被混淆。' },
-    ],
-  },
-  {
-    title: '朋友说：“不要把这件事告诉别人。”',
-    copy: '健康信息属于个人隐私。除非当事人明确同意，否则不能转发、截图或替对方解释。',
-    choices: [
-      { label: '尊重他的决定，只在他需要时提供帮助', correct: true, result: '朋友知道自己的信息不会被转发，愿意继续接受专业咨询。' },
-      { label: '先告诉最亲近的朋友，让大家一起关心他', result: '善意也可能变成未经同意的信息扩散，朋友开始回避求助。' },
-      { label: '把聊天记录保存下来，以后方便证明情况', result: '保存和传播都可能增加隐私泄露风险，应只保留必要信息。' },
-    ],
-  },
-  {
-    title: '有人说：“去做HIV检测的人，生活肯定很乱。”',
-    copy: '把检测和道德评价绑定，会阻止更多人及时求助。',
-    choices: [
-      { label: '“检测是了解健康状态，不代表已经感染，更不是道德评价。”', correct: true, result: '讨论回到科学信息，检测不再被描述成一种羞耻标签。' },
-      { label: '“这也许只是少数人的问题。”', result: '没有纠正误区，仍然把检测和某些人群绑定在一起。' },
-      { label: '不说什么，免得惹麻烦', result: '错误说法继续传播，真正需要帮助的人可能因此沉默。' },
-    ],
-  },
-];
-
-function showTestingSupport(index) {
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = false;
-  const scene = testingSupportScenes[index];
-  els.toolView.innerHTML = `
-    <div class="tool-head"><div><p>陪伴与隐私</p><h3>${scene.title}</h3></div><span class="tool-count">${index + 1} / ${testingSupportScenes.length}</span></div>
-    <p class="tool-copy">${scene.copy}</p>
-    <div class="scenario-grid" id="testingChoices"></div>`;
-  const container = document.getElementById('testingChoices');
-  scene.choices.forEach((option) => {
-    const button = document.createElement('button');
-    button.className = 'scenario-card';
-    button.type = 'button';
-    button.innerHTML = `<b>${option.label}</b><small>选择这条回复</small>`;
-    button.addEventListener('click', () => {
-      if (option.correct) state.support += 5;
-      else {
-        state.support -= 6;
-        if (index === 2) state.privacy -= 12;
-        if (index === 3) state.judgment += 1;
-      }
-      updateStatus();
-      const feedback = document.createElement('div');
-      feedback.className = `feedback ${option.correct ? 'positive' : 'negative'}`;
-      feedback.innerHTML = option.correct
-        ? `<strong>行动结果：</strong>${option.result}`
-        : `<strong>选择后果：</strong>${option.result}<br>${scene.copy}`;
-      els.toolView.appendChild(feedback);
-      const next = document.createElement('div');
-      next.className = 'tap-fallback';
-      const nextButton = document.createElement('button');
-      nextButton.textContent = index === testingSupportScenes.length - 1 ? '进入下一章 →' : '继续陪伴 →';
-      nextButton.addEventListener('click', () => {
-        if (index === testingSupportScenes.length - 1) beginChapterFive();
-        else showTestingSupport(index + 1);
-      });
-      next.appendChild(nextButton);
-      els.toolView.appendChild(next);
-      container.querySelectorAll('button').forEach((itemButton) => { itemButton.disabled = true; });
-    });
-    container.appendChild(button);
-  });
-}
-
-function beginChapterFive() {
-  setChapter(4);
-  timeDivider('检测之后 · 新的问题');
-  addMessage('Q', '如果以后仍可能遇到类似风险，是不是每次都只能等到事后？');
-  addMessage('小安', '不一定。我们把“暴露前、暴露后、确认状态”分别做成行动方案。', { self: true });
-  addMessage('互助提示', '这里不是测验。每个阶段都会先出现生活情境，再把可用工具加入Q的计划。', { type: 'system', note: true });
-  continueButton('和Q一起制定方案', () => showPreventionScene(0));
-}
-
-const preventionScenes = [
-  {
-    phase: '暴露前',
-    question: '如果下一次能提前准备，我可以做什么？',
-    intro: '预防不必等意外发生后才开始。把两项暴露前工具加入计划。',
-    tools: [
-      { title: '正确、全程使用安全套', copy: '安全套是降低HIV及其他性传播感染风险的重要方式，需要从接触开始到结束正确、全程使用。' },
-      { title: '向专业机构咨询PrEP', copy: 'PrEP是暴露前预防，适用于尚未感染HIV、但可能持续存在暴露风险的人，需要先接受专业咨询和评估。' },
-    ],
-  },
-  {
-    phase: '潜在暴露后',
-    question: '如果又发生安全套破损，我应该先做什么？',
-    intro: 'PEP不是日常预防药，也不是感染后的治疗方案，而是潜在暴露后的紧急预防。',
-    tools: [
-      { title: '尽快接受PEP专业评估', copy: '记录时间和情况，尽快联系正规专业机构。越早评估越好，最迟不超过暴露后72小时。' },
-    ],
-  },
-  {
-    phase: '确认状态',
-    question: '身体没有不舒服，能不能说明没有感染？',
-    intro: '症状不能回答感染状态。把确认状态的方法加入计划。',
-    tools: [
-      { title: '按专业建议进行HIV检测', copy: 'HIV检测用于了解感染状态。检测与复查时间应听从专业建议，不能用有无症状代替。' },
-    ],
-  },
-];
-
-function showPreventionScene(sceneIndex) {
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = false;
-  const scene = preventionScenes[sceneIndex];
-  let added = 0;
-  els.toolView.innerHTML = `
-    <div class="tool-head"><div><p>${scene.phase}</p><h3>${scene.question}</h3></div><span class="tool-count">${sceneIndex + 1} / 3</span></div>
-    <p class="tool-copy">${scene.intro}</p>
-    <div class="plan-stage">
-      <div class="plan-options" id="planOptions"></div>
-      <div class="plan-sheet"><span>Q的行动计划</span><div id="planItems"><small>点击左侧工具加入计划</small></div></div>
-    </div>
-    <div class="feedback positive" id="planFeedback" hidden></div>
-    <div class="tap-fallback"><button type="button" id="finishScene" disabled>${sceneIndex === preventionScenes.length - 1 ? '完成预防方案 →' : '进入下一个阶段 →'}</button></div>`;
-  const options = document.getElementById('planOptions');
-  const items = document.getElementById('planItems');
-  scene.tools.forEach((tool) => {
-    const button = document.createElement('button');
-    button.className = 'plan-tool';
-    button.type = 'button';
-    button.innerHTML = `<b>${tool.title}</b><small>加入行动计划</small>`;
-    button.addEventListener('click', () => {
-      if (button.disabled) return;
-      if (added === 0) items.innerHTML = '';
-      added += 1;
-      button.disabled = true;
-      button.classList.add('added');
-      const item = document.createElement('article');
-      item.innerHTML = `<b>${tool.title}</b><p>${tool.copy}</p>`;
-      items.appendChild(item);
-      if (added === scene.tools.length) {
-        const feedback = document.getElementById('planFeedback');
-        feedback.hidden = false;
-        feedback.innerHTML = `<strong>${scene.phase}：</strong>${scene.tools.map((toolItem) => toolItem.title).join('；')}。`;
-        document.getElementById('finishScene').disabled = false;
-      }
-    });
-    options.appendChild(button);
-  });
-  document.getElementById('finishScene').addEventListener('click', () => {
-    if (sceneIndex === preventionScenes.length - 1) {
-      addMessage('Q', '我明白了：暴露前可以提前预防，潜在暴露后及时评估，感染状态要靠检测确认。');
-      continueButton('进入最后一章', beginChapterSix);
+    </section>`, { chapter: state.started ? state.chapter : 0, progress: state.started ? undefined : 2 });
+  document.getElementById('enterStory').addEventListener('click', () => {
+    if (!state.started) {
+      state.started = true;
+      setView('profile', 0);
+      renderProfile();
     } else {
-      showPreventionScene(sceneIndex + 1);
+      renderCurrent();
     }
   });
 }
 
-function beginChapterSix() {
-  setChapter(5);
-  timeDivider('一个月后 · 公开科普准备中');
-  addMessage('林澈', 'Q的经历很有代表性。我们准备做一期72小时行动指南。');
-  addMessage('林澈', '要不要截几段聊天，把名字和头像遮住？');
-  clearChoices('发布之前，你会怎么做');
-  choice('不用聊天记录，根据权威资料重新制作指南', '不公开个案，也能让更多人获得帮助', () => {
-    state.privacy += 22;
-    state.support += 8;
-    addMessage('小安', '那不是我们的故事。我们不用聊天记录，只根据审核过的资料制作指南。', { self: true });
-    addMessage('林澈', '同意。时间、措辞和细节都可能让熟人认出当事人。', { self: true });
-    showGuideBuilder(true);
-  });
-  choice('先征求Q的明确同意，再决定是否引用', '是否公开应由当事人自主决定', () => {
-    state.privacy += 8;
-    addMessage('小安', '如果确实需要引用，至少要先征求Q的明确同意。', { self: true });
-    addMessage('Q', '谢谢你们先问我。我不希望公开聊天，但可以做不包含个案的科普。');
-    showGuideBuilder(true);
-  });
-  choice('遮住头像和名字，直接发布聊天截图', '事件细节和语言习惯也可能暴露身份', () => {
-    state.privacy -= 28;
-    state.judgment += 1;
-    addMessage('小安', '遮住头像和名字应该就认不出来了。', { self: true });
-    addMessage('林澈', '不够。时间、经历和说话方式仍可能让熟人识别。不能替Q公开。', { self: true });
-    addMessage('小安', '那就不用聊天记录，重新做一份指南。', { self: true });
-    showGuideBuilder(false);
+function renderProfile() {
+  setView('profile', 0);
+  const selectedCount = profileFields.filter((field) => state.profile[field.key]).length;
+  shell(`
+    <section class="view profile-view">
+      <div class="view-head">
+        <div><p class="eyebrow">进入故事之前</p><h3>创建你的视角</h3><p>这些设定只改变称谓、对话语境和情绪体验，不改变HIV传播风险，也不会把任何身份与感染绑定。</p></div>
+        <span class="step-count">${selectedCount} / ${profileFields.length}</span>
+      </div>
+      <div class="profile-grid">
+        ${profileFields.map((field) => `
+          <fieldset class="profile-group">
+            <legend>${field.title}</legend>
+            <div class="option-grid">
+              ${field.options.map((option) => `<button class="option ${state.profile[field.key] === option ? 'selected' : ''}" type="button" data-profile="${field.key}" data-value="${option}">${option}</button>`).join('')}
+            </div>
+          </fieldset>`).join('')}
+      </div>
+      <div class="profile-summary">
+        <p>${selectedCount === profileFields.length ? '视角已准备好。医学事实不会因这些选择而改变。' : '完成五项选择后开始；身份项都可以选择“不设定”。'}</p>
+        <button class="button" id="startChapter" type="button" ${selectedCount === profileFields.length ? '' : 'disabled'}>开始第一章 →</button>
+      </div>
+    </section>`, { progress: 6 });
+  document.querySelectorAll('[data-profile]').forEach((button) => button.addEventListener('click', () => {
+    state.profile[button.dataset.profile] = button.dataset.value;
+    saveState();
+    renderProfile();
+  }));
+  document.getElementById('startChapter')?.addEventListener('click', renderInvestigation);
+}
+
+const investigationItems = {
+  phone: ['手机记录', '确认事情发生在约2小时前'],
+  clock: ['发生时间', '时间会影响是否还在PEP评估窗口内'],
+  note: ['具体情况', '记录接触方式与当时能确认的细节'],
+  protection: ['防护情况', '是否正确、全程使用，是否出现破损'],
+};
+
+function renderInvestigation() {
+  setView('investigation', 1);
+  shell(`
+    <section class="scene-view">
+      <div class="scene-canvas room">
+        <div class="scene-caption"><span>凌晨 00:46 · 宿舍</span><p>回到房间后，你越想越不确定：刚才的安全套是不是破了？</p></div>
+        ${Object.keys(investigationItems).map((id) => `<button class="hotspot ${state.found.includes(id) ? 'done' : ''}" type="button" data-item="${id}" aria-label="查看${investigationItems[id][0]}">${state.found.includes(id) ? '✓' : '+'}</button>`).join('')}
+      </div>
+      <div class="scene-dock">
+        <div class="dock-top"><p>先把能确认的信息整理出来。点击场景中的四个位置。</p><span class="step-count">${state.found.length} / 4</span></div>
+        <div class="found-list">${state.found.map((id) => `<span>${investigationItems[id][0]} · ${investigationItems[id][1]}</span>`).join('')}</div>
+        ${state.found.length === 4 ? '<button class="button" id="finishInvestigation" type="button">信息整理好了 →</button>' : ''}
+      </div>
+    </section>`, { progress: 14 });
+  document.querySelectorAll('[data-item]').forEach((button) => button.addEventListener('click', () => {
+    const id = button.dataset.item;
+    if (!state.found.includes(id)) {
+      state.found.push(id);
+      adjust({ action: 8 });
+      toast(investigationItems[id][1]);
+      renderInvestigation();
+    }
+  }));
+  document.getElementById('finishInvestigation')?.addEventListener('click', renderExposureDecision);
+}
+
+function renderNarrative(config) {
+  const choices = config.choices || [];
+  shell(`
+    <section class="narrative">
+      <div class="narrative-art ${config.art || 'room'}"><span class="art-label">${config.location || '你的视角'}</span></div>
+      <div class="narrative-panel">
+        <p class="story-time">${config.time || chapters[state.chapter][0]}</p>
+        <p class="story-copy">${config.copy}</p>
+        ${config.detail ? `<p class="story-detail">${config.detail}</p>` : ''}
+        ${config.feedback ? `<div class="feedback-card ${config.feedbackType || ''}"><span>选择之后</span><p>${config.feedback}</p></div>` : ''}
+        ${config.continueLabel ? `<button class="button" id="continueStory" type="button">${config.continueLabel} →</button>` : ''}
+        ${choices.length ? `<div class="choice-list">${choices.map(buttonChoice).join('')}</div>` : ''}
+      </div>
+    </section>`, { progress: config.progress });
+  document.querySelectorAll('[data-choice]').forEach((button) => button.addEventListener('click', () => config.onChoice(Number(button.dataset.choice))));
+  document.getElementById('continueStory')?.addEventListener('click', config.onContinue);
+}
+
+function renderExposureDecision() {
+  setView('exposureDecision', 1);
+  const helpHint = state.profile.helpStyle === '先自己搜索'
+    ? '你平时习惯先搜索，这次搜索框也最先出现在脑海里。'
+    : state.profile.helpStyle === '直接找专业机构'
+      ? '你平时更愿意直接求助，但真正拿起手机时仍会犹豫。'
+      : '你盯着手机，几种做法同时浮现在脑海里。';
+  const options = [
+    { text: '继续搜索“感染后最早有什么症状”', note: '也许身体会给出答案' },
+    { text: '追问对方“你确定自己没有HIV吗？”', note: '希望从对方身份得到保证' },
+    { text: '先等一晚，看身体会不会不舒服', note: '明早再决定是否求助' },
+    { text: '带着记录，尽快联系正规专业机构', note: '让专业人员结合具体情况评估' },
+  ];
+  renderNarrative({
+    art: 'room', location: '凌晨的宿舍', time: `距离那一晚约 ${70 - state.hours + 2} 小时`, progress: 20,
+    copy: '信息已经整理好了。接下来怎么做，才不会让猜测继续消耗时间？',
+    detail: `${helpHint} 暴露不等于感染，伴侣的身份也不能代替具体风险评估。`,
+    choices: options,
+    onChoice: (index) => {
+      if (index === 0) {
+        adjust({ hours: -6, delay: 6, action: -8 });
+        renderExposureFeedback('搜索结果列出许多互相矛盾的“早期症状”。六小时过去了，但症状仍不能判断感染状态。', 'warning');
+      } else if (index === 1) {
+        adjust({ trust: -12, privacy: -5, judgment: 1 });
+        renderExposureFeedback('对方感到自己正在被审问。即使对方回答，也不能用身份或一句自述替代对这次具体情况的专业评估。', 'warning');
+      } else if (index === 2) {
+        adjust({ hours: -12, delay: 12, action: -12 });
+        renderExposureFeedback('一夜过去，没有症状并不能排除感染。等待身体变化只会消耗PEP的行动窗口。', 'warning');
+      } else {
+        state.professionalHelp = true;
+        adjust({ action: 22 });
+        renderExposureFeedback('你把发生时间、接触方式和防护情况告诉了专业人员。是否需要PEP将由专业人员评估，而不是由游戏或搜索结果下结论。', 'good', true);
+      }
+    },
   });
 }
 
-const guideModules = [
-  '记录暴露发生的时间、接触方式和防护情况',
-  '不要等待症状，也不要通过症状自行判断',
-  '尽快联系当地正规专业机构接受评估',
-  'PEP越早评估越好，最迟不超过暴露后72小时',
-  '如启动PEP，按医嘱完成用药并咨询异常情况',
-  '按专业建议完成HIV检测和必要复查',
-];
-
-function showGuideBuilder(protectedPrivacy) {
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = false;
-  let added = 0;
-  els.toolView.innerHTML = `
-    <div class="tool-head"><div><p>公开科普制作中</p><h3>完成72小时行动指南</h3></div><span class="tool-count" id="guideBuildCount">0 / 6</span></div>
-    <p class="tool-copy">不使用Q的聊天记录。把六张经过审核的行动卡依次加入公开指南。</p>
-    <div class="guide-builder">
-      <div class="module-pool" id="modulePool"></div>
-      <div class="guide-preview"><span>72小时行动指南</span><ol id="guidePreview"></ol></div>
-    </div>
-    <div class="tap-fallback"><button type="button" id="publishGuide" disabled>发布不含个案的指南 →</button></div>`;
-  const pool = document.getElementById('modulePool');
-  const preview = document.getElementById('guidePreview');
-  guideModules.forEach((copy, index) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'guide-module';
-    button.innerHTML = `<i>${index + 1}</i><span>${copy}</span>`;
-    button.addEventListener('click', () => {
-      button.disabled = true;
-      button.classList.add('added');
-      const item = document.createElement('li');
-      item.textContent = copy;
-      preview.appendChild(item);
-      added += 1;
-      document.getElementById('guideBuildCount').textContent = `${added} / 6`;
-      if (added === guideModules.length) document.getElementById('publishGuide').disabled = false;
-    });
-    pool.appendChild(button);
-  });
-  document.getElementById('publishGuide').addEventListener('click', () => {
-    els.toolView.hidden = true;
-    addMessage('互助提示', '指南已经发布：没有任何人的聊天截图，只有可以直接带走的行动步骤。', { type: 'system', note: true });
-    showPublicComments(protectedPrivacy);
+function renderExposureFeedback(message, type, completed = false) {
+  setView(completed ? 'exposureComplete' : 'exposureFeedback', 1);
+  renderNarrative({
+    art: 'room', location: '手机屏幕前', time: completed ? '行动已经开始' : `行动窗口剩余约 ${state.hours} 小时`, progress: completed ? 25 : 21,
+    copy: completed ? '你没有试图靠猜测得到确定答案。' : '这个选择带来了实际后果。',
+    feedback: message, feedbackType: type,
+    continueLabel: completed ? '进入第二章' : '重新决定下一步',
+    onContinue: completed ? startTransmissionChapter : renderExposureDecision,
   });
 }
 
-function showPublicComments(protectedPrivacy) {
-  addMessage('互助提示', '科普指南发布后，评论区出现疑问：“吃PEP是不是说明已经感染？”“是不是生活很乱的人才需要PEP？”', { type: 'system', note: true });
-  clearChoices('选择公开回复');
-  choice('PEP是暴露后的预防措施，不代表已经感染', '风险判断针对具体暴露行为，不是道德评价', () => {
-    state.support += 10;
-    addMessage('小安', 'PEP是暴露后的紧急预防措施，不代表已经感染。需要帮助的人不应先被道德评价。', { self: true });
-    finishGame(protectedPrivacy);
+function startTransmissionChapter() {
+  state.sortIndex = 0;
+  state.sorted = [];
+  setView('transmission', 2);
+  renderTransmission();
+}
+
+function renderTransmission(feedback = '') {
+  setView('transmission', 2);
+  const card = transmissionCards[state.sortIndex];
+  if (!card) return renderTransmissionComplete();
+  shell(`
+    <section class="tool-view">
+      <div class="view-head"><div><p class="eyebrow">校园信息整理</p><h3>这句话应该放在哪里？</h3><p>拖动卡片到分类区；在手机上也可以直接点击分类。</p></div><span class="step-count">${state.sortIndex + 1} / ${transmissionCards.length}</span></div>
+      <div class="card-sort">
+        <article class="prompt-card" draggable="true" id="transmissionCard"><div><span>待判断的情境</span><h4>${card.title}</h4></div><p>${card.detail}</p></article>
+        <div class="sort-zones">
+          <button class="sort-zone" type="button" data-zone="route"><i>1</i><b>真实传播相关情境</b><small>涉及特定体液和有效接触方式</small></button>
+          <button class="sort-zone" type="button" data-zone="daily"><i>2</i><b>不会传播的日常接触</b><small>不需要隔离或恐慌</small></button>
+          <button class="sort-zone" type="button" data-zone="consult"><i>3</i><b>需要补充信息并咨询</b><small>仅凭一句描述无法判断</small></button>
+          <div class="sort-progress"><span>${feedback || '不是背定义，而是知道什么时候不必害怕、什么时候应该求助。'}</span><span>${state.sortIndex} 张已整理</span></div>
+        </div>
+      </div>
+    </section>`, { progress: 28 + state.sortIndex * 2.7 });
+  const zones = document.querySelectorAll('[data-zone]');
+  const submit = (zone) => {
+    const correct = zone === card.answer;
+    if (!correct) adjust({ action: -2 });
+    state.sorted.push({ title: card.title, zone, correct });
+    state.sortIndex += 1;
+    saveState();
+    toast(correct ? card.fact : `这个分类容易造成误解。${card.fact}`);
+    renderTransmission(correct ? card.fact : `重新理解：${card.fact}`);
+  };
+  zones.forEach((zone) => {
+    zone.addEventListener('click', () => submit(zone.dataset.zone));
+    zone.addEventListener('dragover', (event) => { event.preventDefault(); zone.classList.add('active'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('active'));
+    zone.addEventListener('drop', (event) => { event.preventDefault(); submit(zone.dataset.zone); });
   });
-  choice('只有生活混乱的人才会需要PEP', '这会加深污名，也可能阻碍他人求助', () => {
-    state.support -= 22;
-    state.judgment += 2;
-    addMessage('小安', '这类情况通常是个人生活选择造成的。', { self: true });
-    addMessage('林澈', '这种说法不准确，也会让真正需要帮助的人不敢求助。我们应该纠正它。', { self: true });
-    finishGame(protectedPrivacy);
-  });
-  choice('删除所有评论，不再解释', '问题不会因为删除而消失', () => {
-    state.support -= 5;
-    addMessage('小安', '先把评论全部关掉吧。', { self: true });
-    addMessage('林澈', '可以管理攻击性内容，但公开误解仍需要准确回应。');
-    finishGame(protectedPrivacy);
+  document.getElementById('transmissionCard').addEventListener('dragstart', (event) => event.dataTransfer.setData('text/plain', card.title));
+}
+
+function renderTransmissionComplete() {
+  setView('transmissionComplete', 2);
+  renderNarrative({
+    art: 'campus', location: '第二天 · 校园', time: '第二章完成', progress: 47,
+    copy: '恐慌常常来自把“接触”两个字想得太宽。',
+    detail: 'HIV有明确的传播条件。共同进餐、拥抱、握手和蚊虫叮咬不会传播；涉及血液或性接触的具体情境，则应基于事实进行评估。',
+    feedback: '关系身份、外表和道德评价都不是传播途径。把这些与HIV绑定，只会制造污名。', feedbackType: 'good',
+    continueLabel: '进入第三章', onContinue: renderTestingQuestion,
   });
 }
 
-function finishGame(protectedPrivacy) {
-  els.chatLog.hidden = true;
-  els.interactionDock.hidden = true;
-  els.toolView.hidden = true;
-  els.endingView.hidden = false;
+function renderTestingQuestion() {
+  setView('testingQuestion', 3);
+  renderNarrative({
+    art: 'campus', location: '校园路上', time: '几天后', progress: 50,
+    copy: '焦虑没有立刻消失。你开始想：“我现在没有任何不舒服，还需要检测吗？”',
+    detail: '专业人员已经说明了检测与复查安排，但搜索结果又让你动摇。',
+    choices: [
+      { text: '没有症状就先不检测', note: '把身体感觉当作结果' },
+      { text: '只做一次自测，以后都不用管', note: '希望一次操作结束全部不确定' },
+      { text: '按专业建议预约检测与必要复查', note: '用检测了解感染状态' },
+    ],
+    onChoice: (index) => {
+      if (index === 2) {
+        adjust({ action: 12 });
+        renderTestingFeedback('你预约了正规检测。检测是了解感染状态的方式，不代表你已经感染；具体检测与复查时间应听取专业建议。', 'good');
+      } else {
+        adjust({ action: -5, delay: 3 });
+        const message = index === 0
+          ? '没有症状不能排除感染，身体感觉不能代替检测。'
+          : '一次自行检测不能替代专业人员根据时间和具体情况给出的检测、复查建议。';
+        renderTestingFeedback(message, 'warning');
+      }
+    },
+  });
+}
+
+function renderTestingFeedback(message, type) {
+  setView('testingFeedback', 3);
+  renderNarrative({
+    art: 'clinic', location: '正规检测机构', time: '预约页面', progress: 55,
+    copy: type === 'good' ? '预约确认出现在手机上。' : '你重新打开了专业人员给出的检测安排。',
+    feedback: message, feedbackType: type,
+    continueLabel: type === 'good' ? '前往检测机构' : '重新考虑检测',
+    onContinue: type === 'good' ? renderTestingPrivacy : renderTestingQuestion,
+  });
+}
+
+function renderTestingPrivacy() {
+  setView('testingPrivacy', 3);
+  shell(`
+    <section class="view">
+      <div class="view-head"><div><p class="eyebrow">预约完成</p><h3>检测不需要向所有人解释</h3><p>故事不会显示你的检测结果，也不会暗示结果是什么。</p></div></div>
+      <div class="phone-wrap">
+        <div>
+          <article class="appointment-card"><div class="date"><b>16</b><span>周三</span></div><div><h4>健康咨询与检测预约</h4><p>正规检测机构 · 具体安排以机构通知为准</p></div><span>已预约</span></article>
+          <div class="narrative-art clinic" style="min-height:330px;margin-top:12px"><span class="art-label">候诊区 · 你的信息受到保护</span></div>
+        </div>
+        <div class="reply-panel">
+          <h4>室友问你去哪儿</h4>
+          <p>你可以自行决定分享多少。检测和结果都属于个人健康隐私。</p>
+          <div class="choice-list">
+            <button class="choice" data-privacy-choice="0" type="button"><b>“去处理一点健康方面的事，回来再聊。”</b><small>保留自己的解释边界</small></button>
+            <button class="choice" data-privacy-choice="1" type="button"><b>把全部经历和预约截图发过去</b><small>希望通过公开细节换取安慰</small></button>
+            <button class="choice" data-privacy-choice="2" type="button"><b>“我去做检测，所以我可能已经感染了。”</b><small>把检测当作感染结论</small></button>
+          </div>
+        </div>
+      </div>
+    </section>`, { progress: 59 });
+  document.querySelectorAll('[data-privacy-choice]').forEach((button) => button.addEventListener('click', () => {
+    const index = Number(button.dataset.privacyChoice);
+    if (index === 0) {
+      adjust({ privacy: 8, action: 5 });
+      renderTestingClose('你保留了自己的边界。你可以向信任的人求助，也可以只说实际需要，不必公开全部经历。', 'good');
+    } else if (index === 1) {
+      adjust({ privacy: -12 });
+      renderTestingClose('分享自己的信息是你的权利，但焦虑中一次性公开全部细节可能带来之后无法收回的隐私风险。', 'warning');
+    } else {
+      adjust({ judgment: 1, action: -3 });
+      renderTestingClose('检测不等于已经感染。把预约说成感染结论，会让自己和他人承担不必要的恐惧。', 'warning');
+    }
+  }));
+}
+
+function renderTestingClose(message, type) {
+  setView('testingComplete', 3);
+  renderNarrative({
+    art: 'clinic', location: '检测机构外', time: '第三章完成', progress: 63,
+    copy: '门在身后合上，故事没有展示任何检测结果。',
+    detail: '因为结果属于你，也因为任何人都不应该通过故事线索猜测他人的感染状态。',
+    feedback: message, feedbackType: type,
+    continueLabel: '进入第四章', onContinue: renderFriendMessage,
+  });
+}
+
+function renderFriendMessage() {
+  setView('friendMessage', 4);
+  shell(`
+    <section class="view">
+      <div class="view-head"><div><p class="eyebrow">一周后</p><h3>朋友发来三条消息</h3><p>对方没有说明原因，也没有义务说明。</p></div></div>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-head"><i></i><div><b>林野</b><small>刚刚在线</small></div></div>
+          <div class="messages">
+            <div class="bubble">这周能陪我去一趟检测吗？</div>
+            <div class="bubble">没什么大事，我只是想确认一下。</div>
+            <div class="bubble">我不太想解释原因，也不想让别人知道。</div>
+          </div>
+          <div class="phone-input">选择一条回复…</div>
+        </div>
+        <div class="reply-panel">
+          <h4>你准备怎么回复？</h4>
+          <p>支持的第一步，是先回应对方实际提出的需要。</p>
+          <div class="choice-list">
+            <button class="choice" data-friend-choice="0" type="button"><b>“好，我陪你去。你不用现在解释。”</b></button>
+            <button class="choice" data-friend-choice="1" type="button"><b>“是不是发生了什么高风险的事？”</b></button>
+            <button class="choice" data-friend-choice="2" type="button"><b>“你是不是感染HIV了？”</b></button>
+            <button class="choice" data-friend-choice="3" type="button"><b>“我先告诉其他人，让大家一起关心你。”</b></button>
+          </div>
+        </div>
+      </div>
+    </section>`, { progress: 67 });
+  document.querySelectorAll('[data-friend-choice]').forEach((button) => button.addEventListener('click', () => {
+    const index = Number(button.dataset.friendChoice);
+    if (index === 0) {
+      adjust({ trust: 14, privacy: 6, action: 8 });
+      renderFriendFeedback('“谢谢。那我约好时间告诉你。” 对方继续留在了对话里。陪伴不等于有权知道原因或结果。', 'good');
+    } else if (index === 1) {
+      adjust({ trust: -8, privacy: -4 });
+      renderFriendFeedback('对方沉默了一会儿：“我现在不想说这些。” 追问没有帮助预约，反而让求助变得更难。', 'warning');
+    } else if (index === 2) {
+      adjust({ trust: -18, judgment: 1 });
+      renderFriendFeedback('聊天窗口很久没有出现新消息。检测不等于感染，把两者直接画等号会制造恐惧。', 'warning');
+    } else {
+      adjust({ trust: -22, privacy: -22, judgment: 1 });
+      renderFriendFeedback('“不要告诉别人。” 对方撤回了预约信息。关心不能越过知情同意。', 'warning');
+    }
+  }));
+}
+
+function renderFriendFeedback(message, type) {
+  setView('friendFeedback', 4);
+  renderNarrative({
+    art: 'campus', location: '聊天窗口', time: '消息发送后', progress: 71,
+    copy: '一句回复，决定了对方是否还愿意继续求助。',
+    feedback: message, feedbackType: type,
+    continueLabel: '继续这段对话', onContinue: renderScreenshotDecision,
+  });
+}
+
+function renderScreenshotDecision() {
+  setView('screenshotDecision', 4);
+  renderNarrative({
+    art: 'campus', location: '校园长椅', time: '朋友去检测的前一天', progress: 73,
+    copy: '你想向另一个朋友请教路线。你已经遮住了聊天截图里的姓名和头像。',
+    detail: '但截图仍保留了独特的说话方式、时间、地点和完整经历。',
+    choices: [
+      { text: '把截图发过去，反正已经遮住姓名', note: '用完整故事换取路线信息' },
+      { text: '只询问机构地址，不转发任何聊天内容', note: '只分享完成任务所需的最少信息' },
+      { text: '发到群里，让更多人一起判断', note: '扩大传播范围' },
+    ],
+    onChoice: (index) => {
+      if (index === 1) {
+        adjust({ privacy: 12, trust: 8 });
+        state.sharedStory = false;
+        renderChapterFourClose('你只问了机构地址。朋友的故事没有离开你们的对话。', 'good');
+      } else {
+        adjust({ privacy: index === 0 ? -20 : -32, trust: index === 0 ? -12 : -20 });
+        state.sharedStory = true;
+        saveState();
+        renderChapterFourClose('姓名和头像被遮住了，但熟悉上下文的人仍可能认出对方。隐去名字不等于真正匿名。', 'warning');
+      }
+    },
+  });
+}
+
+function renderChapterFourClose(message, type) {
+  setView('friendComplete', 4);
+  renderNarrative({
+    art: 'clinic', location: '检测机构门口', time: '第四章完成', progress: 76,
+    copy: '你陪朋友走到了门口，然后在约好的地方等候。',
+    detail: '故事没有展示朋友的检测结果。陪伴已经完成，不需要用结果来证明。',
+    feedback: message, feedbackType: type,
+    continueLabel: '进入第五章', onContinue: startPlan,
+  });
+}
+
+function startPlan() {
+  if (!state.planAdded.length) state.planSelected = '';
+  setView('plan', 5);
+  renderPlan();
+}
+
+function renderPlan() {
+  setView('plan', 5);
+  const phaseNames = { before: '暴露前', after: '潜在暴露后', confirm: '确认感染状态' };
+  shell(`
+    <section class="tool-view">
+      <div class="view-head"><div><p class="eyebrow">个人预防计划</p><h3>下一次，可以更早行动</h3><p>先点击一张行动卡，再点击它所属的阶段。预防不是单一措施，而是一组可以提前准备的行动。</p></div><span class="step-count">${state.planAdded.length} / ${planItems.length}</span></div>
+      <div class="plan-board">
+        ${Object.entries(phaseNames).map(([phase, label]) => `
+          <button class="plan-column" type="button" data-phase="${phase}">
+            <span>阶段</span><h4>${label}</h4>
+            <div class="plan-items">${state.planAdded.filter((id) => planItems.find((item) => item.id === id)?.phase === phase).map((id) => `<div class="plan-item">${planItems.find((item) => item.id === id).title}</div>`).join('')}</div>
+          </button>`).join('')}
+      </div>
+      <div class="action-pool">
+        ${planItems.map((item) => `<button class="action-card ${state.planAdded.includes(item.id) ? 'added' : ''} ${state.planSelected === item.id ? 'selected' : ''}" type="button" data-plan-item="${item.id}" ${state.planAdded.includes(item.id) ? 'disabled' : ''}><b>${item.title}</b><small>${state.planSelected === item.id ? '已选中，请点击上方阶段' : '选择这张行动卡'}</small></button>`).join('')}
+      </div>
+      ${state.planAdded.length === planItems.length ? '<button class="button" id="finishPlan" type="button" style="margin-top:15px">计划完成 →</button>' : ''}
+    </section>`, { progress: 79 + state.planAdded.length * 1.5 });
+  document.querySelectorAll('[data-plan-item]').forEach((button) => button.addEventListener('click', () => {
+    state.planSelected = button.dataset.planItem;
+    saveState();
+    renderPlan();
+  }));
+  document.querySelectorAll('[data-phase]').forEach((button) => button.addEventListener('click', () => {
+    if (!state.planSelected) return toast('先从下方选择一张行动卡。');
+    const item = planItems.find((candidate) => candidate.id === state.planSelected);
+    if (item.phase !== button.dataset.phase) {
+      adjust({ action: -1 });
+      return toast(`再想想时间顺序：“${item.title}”不属于这个阶段。`);
+    }
+    state.planAdded.push(item.id);
+    state.planSelected = '';
+    adjust({ action: 4 });
+    renderPlan();
+  }));
+  document.getElementById('finishPlan')?.addEventListener('click', renderPepFollowup);
+}
+
+function renderPepFollowup() {
+  setView('pepFollowup', 5);
+  renderNarrative({
+    art: 'room', location: '计划里的情境练习', time: '假设已由专业人员评估并启动PEP', progress: 91,
+    copy: '如果服药期间漏服一次或出现不适，应该怎么做？',
+    detail: '这是情境练习，不代表本故事中的任何角色已经感染，也不提供个体用药方案。',
+    choices: [
+      { text: '自行停药，等身体恢复后再说', note: '中断专业方案' },
+      { text: '下一次擅自加倍剂量', note: '自行改变用药' },
+      { text: '及时联系专业人员，按其指导处理', note: '说明漏服或不适的具体情况' },
+    ],
+    onChoice: (index) => {
+      if (index === 2) {
+        adjust({ action: 8 });
+        renderPepClose('如启动PEP，通常需要连续服用28天，具体遵医嘱。漏服或出现不适时，应及时咨询专业人员，不自行停药、换药或加量。', 'good');
+      } else {
+        adjust({ medicationMistakes: 1, action: -5 });
+        renderPepClose('自行停药或加量都可能破坏专业方案。应尽快说明情况并咨询专业人员，完成用药后仍需按建议检测和复查。', 'warning');
+      }
+    },
+  });
+}
+
+function renderPepClose(message, type) {
+  setView('planComplete', 5);
+  renderNarrative({
+    art: 'room', location: '你的预防计划', time: '第五章完成', progress: 93,
+    copy: '计划被保存下来：暴露前准备，潜在暴露后及时行动，用检测确认状态。',
+    feedback: message, feedbackType: type,
+    continueLabel: '进入第六章', onContinue: startSocial,
+  });
+}
+
+function startSocial() {
+  if (state.view !== 'social') state.socialIndex = 0;
+  setView('social', 6);
+  renderSocial();
+}
+
+function renderSocial(feedback = '') {
+  setView('social', 6);
+  const item = socialPosts[state.socialIndex];
+  if (!item) return finishGame();
+  shell(`
+    <section class="view">
+      <div class="view-head"><div><p class="eyebrow">校园话题广场</p><h3>你会怎么说？</h3><p>回应事实，也回应这些话可能给真实的人带来的压力。</p></div><span class="step-count">${state.socialIndex + 1} / ${socialPosts.length}</span></div>
+      <div class="phone-wrap">
+        <article class="post">
+          <div class="post-head"><span class="post-avatar">问</span><div><b>校园树洞 · 匿名</b><small>刚刚发布</small></div></div>
+          <p>${item.post}</p>
+          ${feedback ? `<div class="reply-preview">${feedback}</div>` : ''}
+        </article>
+        <div class="reply-panel"><h4>选择一条回应</h4><p>不公开任何人的经历，只说明必要的科学事实和支持方向。</p><div class="choice-list">${item.options.map(buttonChoice).join('')}</div></div>
+      </div>
+    </section>`, { progress: 94 + state.socialIndex * 1.3 });
+  document.querySelectorAll('[data-choice]').forEach((button) => button.addEventListener('click', () => {
+    const option = item.options[Number(button.dataset.choice)];
+    if (option.good) adjust({ action: 5 });
+    else adjust({ judgment: 1, trust: -4 });
+    state.history.push({ post: item.post, reply: option.text, good: Boolean(option.good) });
+    state.socialIndex += 1;
+    saveState();
+    toast(option.reply);
+    renderSocial(option.reply);
+  }));
+}
+
+function finishGame() {
+  setView('ending', 6);
   let ending;
-  if (state.judgment >= 3 || state.support < 35) {
+  if (state.judgment >= 4 || state.trust < 35) {
     ending = {
-      title: '对方已离线',
-      copy: '你最终提供了部分信息，但追问、判断或带有污名的回应让求助变得更困难。真正有效的帮助，需要先让对方愿意继续说下去。',
-      tags: ['减少道德判断', '先回应行动问题', '保护求助空间'],
-      message: '“我想要的是下一步该怎么办，不是先证明自己值得被帮助。”',
+      mark: '离', title: '对方已离线',
+      copy: '不断追问、替别人下结论或使用污名化语言，让求助者不再愿意继续交流。支持不是获得真相的权利，而是让对方仍有选择。',
+      tags: ['先回应需要', '不追问隐私', '不把风险道德化'],
     };
-  } else if (state.delay >= 10) {
+  } else if (state.delay >= 18) {
     ending = {
-      title: '搜索结果没有尽头',
-      copy: '你们最后找到了专业入口，但搜索症状和等待消耗了重要时间。72小时不是用来观察症状的期限，而是尽快接受专业评估的行动窗口。',
-      tags: ['停止搜索症状', '越早评估越好', '高风险不等于感染'],
-      message: '“以后再遇到这种事，我会先行动，不再等搜索结果给我答案。”',
+      mark: '搜', title: '搜索结果没有尽头',
+      copy: '症状搜索带来了更多矛盾答案，也消耗了行动时间。无法确定时，记录事实并尽快接受专业评估，比等待身体变化更重要。',
+      tags: ['不靠症状判断', '72小时行动窗口', '专业评估'],
     };
-  } else if (state.medicationMistakes >= 2) {
+  } else if (state.medicationMistakes >= 1) {
     ending = {
-      title: '拿到药以后',
-      copy: '你们及时启动了行动，却低估了规范用药和后续检测的重要性。开始PEP不是终点，具体用药、漏服处理和复查都应遵循专业建议。',
-      tags: ['完成28天疗程', '不自行调整用药', '按建议检测复查'],
-      message: '“我以为拿到药就结束了。现在我知道，后面的每一天也很重要。”',
+      mark: '药', title: '拿到药以后',
+      copy: '开始PEP不是行动的终点。规范服药、及时咨询漏服或不适，并按建议完成检测和复查，同样重要。',
+      tags: ['通常连续28天', '不自行调整', '按建议复查'],
     };
-  } else if (!protectedPrivacy || state.privacy < 55) {
+  } else if (state.sharedStory || state.privacy < 58) {
     ending = {
-      title: '名字遮住了，故事没有',
-      copy: '你们完成了行动指南，却差一点让个案细节暴露求助者。隐去姓名并不一定等于匿名，健康求助需要更严格的隐私边界。',
-      tags: ['不替他人公开', '最少必要信息', '隐私也是支持'],
-      message: '“谢谢你们最后没有发出聊天记录。那段经历仍然应该由我决定是否公开。”',
+      mark: '隐', title: '名字遮住了，故事没有',
+      copy: '姓名和头像不是一个人唯一的身份线索。时间、地点、说话方式和经历组合起来，仍可能让熟悉的人认出对方。',
+      tags: ['最少必要信息', '知情同意', '不替别人公开'],
     };
   } else {
     ending = {
-      title: '把灯留着',
-      copy: '你们帮助Q在行动窗口内找到专业评估，陪伴其理解并完成PEP流程，也把个案留在了匿名会话里。后来发布的指南没有任何人的故事，却能帮助下一个需要行动的人。',
-      tags: ['及时行动', '规范完成PEP', '了解PrEP', '保护隐私'],
-      message: '“谢谢你们没有先问我是谁，而是先告诉我该怎么做。”',
+      mark: '行', title: '及时行动',
+      copy: '你记录了必要信息，在行动窗口内寻求专业帮助，也在朋友和公共讨论中守住了隐私与尊重。科学信息终于没有被恐惧挡住。',
+      tags: ['及时行动', '科学预防', '尊重隐私', '拒绝污名'],
     };
   }
-  els.endingTitle.textContent = ending.title;
-  els.endingCopy.textContent = ending.copy;
-  els.endingTags.innerHTML = ending.tags.map((tag) => `<span>${tag}</span>`).join('');
-  els.finalMessageText.textContent = `“${ending.message.replace(/^“|”$/g, '')}”`;
+  shell(`
+    <section class="ending">
+      <div class="ending-grid">
+        <div>
+          <div class="ending-mark">${ending.mark}</div>
+          <p class="eyebrow" style="margin-top:18px">你的故事结局</p>
+          <h3>${ending.title}</h3>
+          <p class="ending-copy">${ending.copy}</p>
+          <div class="ending-tags">${ending.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
+          <button class="button" id="replayButton" type="button">用不同选择再玩一次 ↻</button>
+        </div>
+        <div class="review">
+          <h4>带走这六件事</h4>
+          <div class="review-list">
+            <div class="review-item"><i>1</i><div><b>暴露不等于感染</b><p>记录时间、接触方式和防护情况，尽快寻求专业评估。</p></div></div>
+            <div class="review-item"><i>2</i><div><b>72小时不是等待时间</b><p>PEP越早评估越好，最迟不超过潜在暴露后72小时。</p></div></div>
+            <div class="review-item"><i>3</i><div><b>不能依靠症状判断</b><p>感染状态需要通过检测了解，并按专业建议复查。</p></div></div>
+            <div class="review-item"><i>4</i><div><b>日常接触不会传播</b><p>共同进餐、拥抱、握手和蚊虫叮咬不会传播HIV。</p></div></div>
+            <div class="review-item"><i>5</i><div><b>预防发生在不同阶段</b><p>安全套和PrEP用于暴露前；PEP用于潜在暴露后的紧急预防。</p></div></div>
+            <div class="review-item"><i>6</i><div><b>隐私也是支持的一部分</b><p>检测不是道德评价，不替别人公开经历和健康信息。</p></div></div>
+          </div>
+          <p class="closing-quote">不先追问你是谁，先帮助你开始行动。</p>
+        </div>
+      </div>
+    </section>`, { progress: 100 });
+  document.getElementById('replayButton').addEventListener('click', resetGame);
+}
+
+function renderCurrent() {
+  const routes = {
+    cover: renderCover,
+    profile: renderProfile,
+    investigation: renderInvestigation,
+    exposureDecision: renderExposureDecision,
+    exposureFeedback: renderExposureDecision,
+    exposureComplete: () => renderExposureFeedback('你把发生时间、接触方式和防护情况告诉了专业人员。是否需要PEP将由专业人员评估。', 'good', true),
+    transmission: renderTransmission,
+    transmissionComplete: renderTransmissionComplete,
+    testingQuestion: renderTestingQuestion,
+    testingFeedback: renderTestingQuestion,
+    testingPrivacy: renderTestingPrivacy,
+    testingComplete: () => renderTestingClose('你保留了自己的边界，也没有把检测当成感染结论。', 'good'),
+    friendMessage: renderFriendMessage,
+    friendFeedback: renderFriendMessage,
+    screenshotDecision: renderScreenshotDecision,
+    friendComplete: () => renderChapterFourClose('陪伴不要求对方交出经历或检测结果。', 'good'),
+    plan: renderPlan,
+    pepFollowup: renderPepFollowup,
+    planComplete: () => renderPepClose('计划已保存。具体用药与随访安排仍应遵循专业建议。', 'good'),
+    social: renderSocial,
+    ending: finishGame,
+  };
+  (routes[state.view] || renderCover)();
 }
 
 function resetGame() {
-  state.chapter = 0;
-  state.hours = 70;
-  state.support = 50;
-  state.privacy = 70;
-  state.delay = 0;
-  state.judgment = 0;
-  state.medicationMistakes = 0;
-  state.informationFound = new Set();
-  state.dismissedRumors = new Set();
-  state.profile = { identity: '', orientation: '', relationship: '', helpStyle: '', knowledgeLevel: '' };
-  els.chatLog.hidden = false;
-  els.timerPill.classList.remove('stopped');
-  els.restartDialog.close();
-  showProfileSetup();
+  state = freshState();
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('restartDialog').close();
+  renderCover();
 }
 
-document.getElementById('restartButton').addEventListener('click', () => els.restartDialog.showModal());
-document.getElementById('cancelRestart').addEventListener('click', () => els.restartDialog.close());
+document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => document.getElementById(button.dataset.close).close()));
 document.getElementById('confirmRestart').addEventListener('click', resetGame);
-document.getElementById('playAgainButton').addEventListener('click', resetGame);
-document.querySelectorAll('.profile-option').forEach((button) => {
-  button.addEventListener('click', () => {
-    profileDraft[button.dataset.profileKey] = button.dataset.profileValue;
-    updateProfileSetup();
-  });
-});
-els.startGameButton.addEventListener('click', startWithProfile);
 
-resetGame();
+renderCover();

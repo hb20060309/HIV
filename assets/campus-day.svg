@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">白天的校园</title>
+  <desc id="desc">阳光下的校园道路、教学楼和树木。</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#bfdcdf"/><stop offset="1" stop-color="#eef1dc"/></linearGradient>
+    <linearGradient id="path" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d2b79d"/><stop offset="1" stop-color="#b98f74"/></linearGradient>
+  </defs>
+  <rect width="1440" height="900" fill="url(#sky)"/>
+  <circle cx="1160" cy="150" r="78" fill="#f3ca68"/>
+  <path d="M0 510c250-95 395-45 610 12 280 74 490-80 830-5v383H0z" fill="#71917a"/>
+  <path d="M520 900c112-240 152-330 207-380 55 50 95 140 207 380z" fill="url(#path)"/>
+  <g fill="#e6e1cf" stroke="#45665f" stroke-width="7">
+    <path d="M170 270h450v330H170z"/><path d="M820 320h430v290H820z"/>
+  </g>
+  <g fill="#416b70"><path d="M140 265l255-130 255 130z"/><path d="M790 315l245-110 245 110z"/></g>
+  <g fill="#8ab1ad">
+    <rect x="215" y="325" width="76" height="90"/><rect x="350" y="325" width="76" height="90"/><rect x="485" y="325" width="76" height="90"/>
+    <rect x="858" y="370" width="70" height="82"/><rect x="997" y="370" width="70" height="82"/><rect x="1136" y="370" width="70" height="82"/>
+  </g>
+  <g fill="#315b4a"><circle cx="90" cy="510" r="116"/><circle cx="1350" cy="520" r="126"/><circle cx="710" cy="485" r="72"/></g>
+  <g fill="#3c6d58"><circle cx="105" cy="415" r="72"/><circle cx="1320" cy="418" r="80"/><circle cx="683" cy="430" r="46"/></g>
+  <g fill="#5c3e31"><rect x="78" y="500" width="28" height="210"/><rect x="1330" y="510" width="31" height="205"/><rect x="700" y="480" width="22" height="135"/></g>
+  <g fill="#253c3a">
+    <circle cx="600" cy="650" r="19"/><path d="M582 676q18-20 36 0l10 86h-56z"/>
+    <circle cx="834" cy="684" r="18"/><path d="M818 708q16-18 32 0l12 80h-56z"/>
+  </g>
+  <g fill="#d16d55"><path d="M572 762h56l-9 91h-38z"/><path d="M806 788h56l-8 82h-39z"/></g>
+</svg>
